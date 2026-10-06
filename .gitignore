@@ -1,0 +1,9 @@
+# Task 3.2: secretos locales nunca versionados (.env.example SI se versiona)
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+dist/

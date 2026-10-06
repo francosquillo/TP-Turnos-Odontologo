@@ -1,0 +1,179 @@
+{
+  "discovery": {
+    "casos_de_uso": [
+      "Reserva online 24h",
+      "ConfirmaciÃ³n WhatsApp auto-actualiza agenda",
+      "Odontograma FDI + presupuesto en sillÃ³n",
+      "LiquidaciÃ³n OS por nomenclador",
+      "Lista de espera con aviso de hueco"
+    ],
+    "competitors": [
+      {
+        "name": "Ã“rbita (AR)",
+        "notes_file": "discovery/sources/"
+      },
+      {
+        "name": "DentalSoft AR (AR)",
+        "notes_file": "discovery/sources/"
+      },
+      {
+        "name": "DentiClick (AR)",
+        "notes_file": "discovery/sources/"
+      }
+    ],
+    "created_by": "discovery-research",
+    "funcionalidades_necesarias": [
+      "Agenda multi-profesional con estados + anti-solapamiento por sillÃ³n/box",
+      "Reserva online 24/7",
+      "Recordatorios/confirmaciÃ³n WhatsApp que actualizan agenda",
+      "Odontograma FDI + historia clÃ­nica + presupuestos",
+      "Cuenta corriente + caja con cierre diario",
+      "LiquidaciÃ³n OS por nomenclador CSV/PDF",
+      "Roles + importaciÃ³n Excel/CSV"
+    ],
+    "funcionalidades_opcionales": [
+      "Recepcionista IA 24/7 (post-TP)",
+      "Portal paciente",
+      "MercadoPago + AFIP/ARCA (escalamiento)",
+      "Periodontograma/imÃ¡genes/firma",
+      "Multi-sede/analytics/API pÃºblica"
+    ],
+    "integraciones": [
+      "WhatsApp Business API",
+      "Google Calendar + reseÃ±as Google",
+      "MercadoPago + AFIP/ARCA (escalamiento)",
+      "Email/SMS fallback",
+      "Excel/CSV"
+    ],
+    "problema": "Consultorios odontolÃ³gicos AR pierden turnos por ausentismo sin confirmaciÃ³n automÃ¡tica, agenda en papel/planilla, HC extraviadas, liquidaciÃ³n OS manual y nula recuperaciÃ³n de inactivos; ningÃºn sistema local cierra turno â†’ clÃ­nica â†’ cobro con seguridad trazable.",
+    "reglas_de_negocio": [
+      "Sin solapamiento por sillÃ³n/profesional",
+      "Turno con estado; confirmaciÃ³n auto-actualiza",
+      "Presupuesto nace del odontograma",
+      "Cobertura OS por tratamiento/plan, liquidaciÃ³n por perÃ­odo",
+      "Cierre de caja diario obligatorio",
+      "Sin datos clÃ­nicos sensibles por WhatsApp/SMS plano"
+    ],
+    "restricciones": [
+      "TP universitario UTN: nÃºcleo acadÃ©mico evaluable primero, escalamiento despuÃ©s",
+      "Stack facultad: Python/FastAPI/JWT/SQLAlchemy/PostgreSQL/Redis/Docker + React/TS/Vite",
+      "Equipo 3 personas",
+      "Si escala a datos reales: Leyes 25.326/26.529"
+    ],
+    "riesgos": [
+      "Pacientes ignoran WhatsApp / costo Meta por volumen",
+      "OS exigen formatos propios de liquidaciÃ³n",
+      "Lock-in sin migraciÃ³n de datos",
+      "Dependencia WhatsApp/Meta",
+      "Alcance supere equipo estudiantil"
+    ],
+    "sources": [
+      "discovery/discovery.md",
+      "discovery/sources/ (21 fichas: 16 odontolÃ³gicos + 5 contexto)"
+    ],
+    "usuarios": [
+      "Paciente",
+      "Secretaria/recepcionista",
+      "OdontÃ³logo",
+      "DueÃ±o/director",
+      "Administrador del sistema"
+    ]
+  },
+  "owner": "active-orchestrator",
+  "roadmap": {
+    "created_by": "roadmap-generator",
+    "source": "CHANGES.md",
+    "changes": [
+      "C-01",
+      "C-02",
+      "C-03",
+      "C-04",
+      "C-05",
+      "C-06",
+      "C-07",
+      "C-08",
+      "C-09",
+      "C-10",
+      "C-11",
+      "C-12"
+    ]
+  },
+  "registry": {
+    "created_by": "skill-registry",
+    "file": ".atl/skill-registry.md",
+    "skills_registered": [
+      "fastapi",
+      "fastapi-templates",
+      "supabase-postgres-best-practices",
+      "postgresql-table-design",
+      "redis-patterns",
+      "vercel-react-best-practices",
+      "test-driven-development",
+      "python-testing-patterns",
+      "playwright-cli",
+      "frontend-design",
+      "pdf",
+      "xlsx"
+    ]
+  },
+  "step": "done",
+  "version": 4,
+  "skills": {
+    "created_by": "find-skill (recommend-only, active-orchestrator fallback manual — sub-skill find-skill no disponible en entorno, npx bloqueado por ExecutionPolicy)",
+    "recommended": [
+      "frontend-design",
+      "pdf",
+      "xlsx"
+    ],
+    "installed": []
+  },
+  "kb": {
+    "files": [
+      "knowledge-base/01_vision_y_objetivos.md",
+      "knowledge-base/02_descripcion_general.md",
+      "knowledge-base/03_actores_y_roles.md",
+      "knowledge-base/04_modelo_de_datos.md",
+      "knowledge-base/05_reglas_de_negocio.md",
+      "knowledge-base/06_funcionalidades.md",
+      "knowledge-base/07_flujos_principales.md",
+      "knowledge-base/08_arquitectura_propuesta.md",
+      "knowledge-base/09_decisiones_y_supuestos.md",
+      "knowledge-base/10_preguntas_abiertas.md",
+      "knowledge-base/README.md"
+    ],
+    "source": "ingest",
+    "created_by": "kb-creator",
+    "discovery": {
+      "stack": "Python + FastAPI + JWT + SQLAlchemy + PostgreSQL + Redis + Docker/Compose; React + TypeScript + Vite",
+      "domain": "salud odontologica (turnos + clinica + cobros)",
+      "system_type": "web_app",
+      "problem": "Consultorios odontologicos AR pierden turnos e ingresos por ausentismo sin confirmacion automatica, agenda en papel, HC extraviadas y liquidacion OS manual; ningun sistema local cierra turno-clinica-cobro con seguridad trazable.",
+      "needs_infra": true,
+      "scale": "public_multi_user"
+    }
+  },
+  "agents": {
+    "created_by": "agent-instruction",
+    "files": [
+      "AGENTS.md",
+      "CLAUDE.md"
+    ],
+    "reglas_applied": [
+      "sede-unica",
+      "rol-fk-simple-dueno-admin",
+      "pagos-simulados-afip-post",
+      "datos-ficticios",
+      "exclude-gist-sobreturno-auditado",
+      "postgres-real-no-sqlite",
+      "no-phi-whatsapp",
+      "cc-derivada-caja-diaria-recibos-sin-huecos",
+      "presupuesto-desde-hallazgo-fdi",
+      "espera-2h-cascada",
+      "secretos-env-jwt30-tz",
+      "pydantic-forbid-annotated-async",
+      "ts-stricto-pascal-python-snake",
+      "capas-08-soft-delete",
+      "no-build-commit-push-sin-pedido"
+    ]
+  }
+}
