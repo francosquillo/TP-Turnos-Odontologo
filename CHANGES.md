@@ -122,7 +122,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-01, §DD-02
 
 ### [C-02] `core-models-identidad-pacientes`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 18/18 (2026-10-08) → `openspec/changes/archive/2026-10-08-c-02-core-models-identidad-pacientes/` — GATE 1 [x] Verificado PG real 2026-10-08: 65 passed, 1 skipped (DB puerto 5433 por PG18 en 5432); `openspec validate --all --strict` 2 passed, 0 failed
 - **Scope**:
   - Modelos: `Rol, Usuario (rol_id FK, un rol por usuario), Paciente, Profesional, Sillon (sede texto, sede única)`
   - Migración 001: tablas + índices (`usuario.email unique, paciente.dni, apellido, telefono`), constraint `>=1 admin activo` (a nivel servicio, no DB)
