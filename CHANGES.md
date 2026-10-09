@@ -139,7 +139,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/10_preguntas_abiertas.md` §IN-01, §IN-02
 
 ### [C-03] `auth-rbac`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 14/14 (2026-10-08) → `openspec/changes/archive/2026-10-08-c-03-auth-rbac/` — GATE 2 [x] Verificado PG/Redis reales 2026-10-08 (DB puerto 5433): backend 98 passed + 1 skipped (skip pre-existente de C-01, documentado), frontend 5/5 + tsc limpio; `openspec validate --all --strict` 3 passed, 0 failed
 - **Scope**:
   - `POST /auth/login` (email+password, 401 genérico sin enumerar), `POST /auth/refresh` (rotativo httpOnly), `GET /auth/me`, `POST /auth/logout`
   - JWT Bearer corto (`JWT_EXPIRE_MIN=30`) + hash Argon2/bcrypt

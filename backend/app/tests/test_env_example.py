@@ -46,3 +46,10 @@ def test_env_example_sin_secretos_reales():
         if linea.startswith("JWT_SECRET="):
             valor = linea.split("=", 1)[1].strip()
             assert valor == "" or "CHANGEME" in valor or "placeholder" in valor.lower()
+
+
+def test_env_example_trae_refresh_expire():
+    """C-03 task 5.1 RED: REFRESH_EXPIRE_DAYS con default 7 documentado."""
+    assert ENV_EXAMPLE.exists(), f"falta {ENV_EXAMPLE}"
+    texto = ENV_EXAMPLE.read_text(encoding="utf-8")
+    assert "REFRESH_EXPIRE_DAYS=7" in texto

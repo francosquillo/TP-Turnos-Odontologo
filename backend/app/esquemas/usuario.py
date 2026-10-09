@@ -15,3 +15,13 @@ class UsuarioResponse(BaseSchema):
     email: str
     rol_id: int
     activo: bool
+
+
+class UsuarioAdminOut(BaseSchema):
+    """Fila del listado admin: con nombre de rol, sin hash (C-03)."""
+
+    id: int
+    nombre: str
+    email: str
+    rol: str
+    activo: bool

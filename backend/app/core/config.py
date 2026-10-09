@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     jwt_secret: str = Field(min_length=1)
     jwt_expire_min: int = 30
+    refresh_expire_days: int = 7
     whatsapp_token: str = ""
     whatsapp_phone_id: str = ""
     whatsapp_webhook_secret: str = ""

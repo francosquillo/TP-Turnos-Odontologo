@@ -1,14 +1,14 @@
-"""Seed idempotente C-02: roles + admin + demo ficticia (D-04).
+"""Seed idempotente C-02/C-03: roles + admin + demo ficticia (D-04).
 
 Guardas por clave natural (rol.nombre, usuario.email, sillon.nombre,
 profesional.matricula) + transaccion ordenada: re-ejecutar no duplica
 ni falla en uniques. Datos 100% ficticios (prefijo Demo).
 
 Admin inicial desde SEED_ADMIN_* con fail-fast (coherente con C-01 D-03).
-password_hash es placeholder sha256: el hash definitivo llega en C-03.
+Desde C-03 el hash es Argon2 (`hashear_password`); si el admin ya existe
+con placeholder/bcrypt heredado se re-hashea una vez (idempotente).
 """
 import asyncio
-import hashlib
 import os
 import sys
 from pathlib import Path
@@ -34,9 +34,9 @@ AGENDA_DEMO = {
 }
 
 
-def _hash_placeholder(password_plano: str) -> str:
-    """Placeholder NO productivo: sha256 + prefijo (C-03 impone Argon2/bcrypt)."""
-    return "sha256-placeholder$" + hashlib.sha256(password_plano.encode()).hexdigest()
+def _necesita_rehash(hash_guardado: str) -> bool:
+    """True si el hash no es Argon2 (placeholder o bcrypt heredado, C-03)."""
+    return not hash_guardado.startswith("$argon2")
 
 
 async def seed_roles(sesion: AsyncSession) -> list[Rol]:
@@ -53,11 +53,16 @@ async def seed_roles(sesion: AsyncSession) -> list[Rol]:
 
 
 async def seed_admin(sesion: AsyncSession, email: str, password_plano: str) -> Usuario:
-    """Crea el admin inicial si falta (lookup case-insensitive)."""
+    """Crea el admin inicial si falta; re-hashea a Argon2 si es heredado."""
+    from app.core.security import hashear_password
+
     existente = await sesion.scalar(
         select(Usuario).where(func.lower(Usuario.email) == email.lower())
     )
     if existente is not None:
+        if _necesita_rehash(existente.password_hash):
+            existente.password_hash = hashear_password(password_plano)
+            await sesion.flush()
         return existente
     rol_admin = await sesion.scalar(select(Rol).where(Rol.nombre == "admin"))
     if rol_admin is None:
@@ -65,7 +70,7 @@ async def seed_admin(sesion: AsyncSession, email: str, password_plano: str) -> U
     admin = Usuario(
         nombre="Admin Demo",
         email=email,
-        password_hash=_hash_placeholder(password_plano),
+        password_hash=hashear_password(password_plano),
         rol_id=rol_admin.id,
         activo=True,
     )
