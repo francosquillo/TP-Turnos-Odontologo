@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from app.api import admin, agenda, auth, clinica, cobros, disponibilidad
 from app.api import notificaciones
 from app.api import obras_sociales as os_api
-from app.api import pacientes, profesionales, sillones, turnos
+from app.api import pacientes, profesionales, reservas, sillones, turnos
 from app.core.config import get_settings
 
 
@@ -78,6 +78,7 @@ def create_app() -> FastAPI:
         profesionales.router,
         sillones.router,
         turnos.router,
+        reservas.router,
         disponibilidad.router,
         agenda.router,
         clinica.router,

@@ -3,11 +3,12 @@ import { AuthProveedor, useAuth } from "./shared/auth-context";
 import { RequireRole } from "./shared/RequireRole";
 import { AgendaPage } from "./features/agenda/AgendaPage";
 import { Confirmar } from "./pages/Confirmar";
+import { Inicio } from "./pages/Inicio";
 import { Login } from "./pages/Login";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "reservas" | "agenda" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "inicio" | "reservas" | "agenda" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -37,12 +38,22 @@ function PanelAdmin(): JSX.Element {
 }
 
 export function App(): JSX.Element {
-  const [pagina, setPagina] = useState<Pagina>("reservas");
+  const [pagina, setPagina] = useState<Pagina>("inicio");
+  const [tokenConfirmar, setTokenConfirmar] = useState<string>("");
+
+  function irAPagina(destino: string): void {
+    if (destino === "reservas" || destino === "seguridad" || destino === "inicio") {
+      setPagina(destino);
+    }
+  }
 
   return (
     <AuthProveedor>
       <Barra />
       <nav>
+        <button type="button" onClick={(): void => setPagina("inicio")}>
+          Inicio
+        </button>
         <button type="button" onClick={(): void => setPagina("reservas")}>
           Reservar
         </button>
@@ -63,7 +74,15 @@ export function App(): JSX.Element {
         </button>
       </nav>
       <main>
-        {pagina === "reservas" && <Reservas />}
+        {pagina === "inicio" && <Inicio alNavegar={irAPagina} />}
+        {pagina === "reservas" && (
+          <Reservas
+            alConfirmar={(token: string): void => {
+              setTokenConfirmar(token);
+              setPagina("confirmar");
+            }}
+          />
+        )}
         {pagina === "agenda" && (
           <RequireRole
             roles={["admin", "secretaria", "odontologo"]}
@@ -72,7 +91,7 @@ export function App(): JSX.Element {
             <AgendaPage />
           </RequireRole>
         )}
-        {pagina === "confirmar" && <Confirmar />}
+        {pagina === "confirmar" && <Confirmar token={tokenConfirmar} />}
         {pagina === "seguridad" && <Seguridad />}
         {pagina === "ingresar" && <Login />}
         {pagina === "admin" && (

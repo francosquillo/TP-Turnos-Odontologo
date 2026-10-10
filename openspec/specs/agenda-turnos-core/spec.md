@@ -129,13 +129,13 @@ y responde `422` ante transición ilegal; los estados
 
 ### Requirement: Disponibilidad como horario menos turnos con 409 y re-oferta
 
-El sistema SHALL exponer
-`GET /disponibilidad?profesional_id&desde&hasta[&sillon_id&duracion_min]` que
-calcula huecos ofrecibles como horario semanal de `agenda_config` del
-profesional menos turnos activos no-sobreturno (del profesional y del sillón si
-se pide), solo dentro del horario (fuera de horario → lista vacía, RN-TU-05), y
-SHALL responder `409 {"detail": "hueco ocupado", "alternativas": [...]}` con
-huecos próximos ante colisión concurrente en creación (Flujo 1).
+`GET /disponibilidad` (C-04: solo staff con `require_role`) SHALL ganar una
+variante pública SIN Bearer que ejecuta el mismo `calcular_huecos` y devuelve
+solo `[{inicio, fin}]` sin datos de pacientes (sin IDs de turnos, nombres ni
+teléfonos), exigiendo siempre `profesional_id` (nunca vuelca la agenda
+completa); la variante staff autenticada SHALL conservar su
+comportamiento y RBAC sin cambios, y ambas variantes SHALL devolver los mismos
+huecos para igual profesional/rango.
 
 #### Scenario: Disponibilidad respeta horario y turnos existentes
 
@@ -149,6 +149,24 @@ huecos próximos ante colisión concurrente en creación (Flujo 1).
 - **WHEN** dos creaciones concurrentes piden el mismo profesional/sillón/horario
   libre
 - **THEN** una responde `201` y la otra `409` con `alternativas` no vacías
+
+#### Scenario: Variante staff sigue exigiendo Bearer
+
+- **WHEN** se llama `GET /disponibilidad` de staff sin header Authorization en
+  la ruta autenticada
+- **THEN** responde `401` (la rama pública es la única sin auth)
+
+#### Scenario: Cálculo idéntico en ambas variantes
+
+- **WHEN** se pide el mismo profesional/rango por la variante staff y por la
+  pública
+- **THEN** ambas devuelven los mismos huecos `[inicio, fin)`
+
+#### Scenario: Pública no expone pacientes y exige profesional
+
+- **WHEN** se pide la variante pública sin `profesional_id`
+- **THEN** responde `422`; y cuando responde `200` ningún elemento contiene
+  datos de pacientes
 
 ### Requirement: Agenda por vistas día/semana/mes
 
@@ -193,13 +211,26 @@ CA-1/CA-2).
 
 ### Requirement: Columna token reservada sin flujo en este change
 
-La migración SHALL crear `token_confirmacion_hash TEXT NULLABLE` con índice
-parcial `WHERE token_confirmacion_hash IS NOT NULL`, y en este change la columna
-SHALL permanecer siempre `NULL` (ningún endpoint la escribe ni la exige); el
-flujo de confirmación por token un solo uso con expiración es C-05 (RN-TU-04).
+`token_confirmacion_hash` (C-04: siempre NULL, sin endpoints que la escriban)
+SHALL pasar a ser escrita por `POST /reservas` (hash SHA-256 del token) e
+invalidada (NULL) por `GET /confirmar/:token` al confirmar; los turnos de
+staff (`origen=secretaria|lista_espera`) SHALL mantenerla NULL y ningún
+endpoint staff la SHALL exponer ni exigir; sin cambio de DDL (la columna y su
+índice parcial ya existen desde C-04).
 
 #### Scenario: Turnos creados no exponen token
 
 - **WHEN** se crea un turno por staff y se lee su detalle
 - **THEN** `token_confirmacion_hash` es nulo o ausente y no hay ningún link de
   confirmación en la respuesta
+
+#### Scenario: Turno staff no toca el hash
+
+- **WHEN** se crea un turno por `POST /turnos` staff y se lee su detalle
+- **THEN** `token_confirmacion_hash` sigue nulo o ausente y no hay link de
+  confirmación en la respuesta
+
+#### Scenario: Turno online escribe e invalida el hash
+
+- **WHEN** se crea por `POST /reservas` y luego se confirma por token
+- **THEN** tras crear el hash es no nulo y tras confirmar vuelve a nulo

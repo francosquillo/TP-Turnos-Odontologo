@@ -180,7 +180,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/09_decisiones_y_supuestos.md` §DD-03
 
 ### [C-05] `reserva-online-publica`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 15/15 (2026-10-10) → `openspec/changes/archive/2026-10-10-c-05-reserva-online-publica/` — eslabón crítico C-05 ✓ (vía C-04+C-08 habilita C-09; desbloqueo parcial C-12 front reservas). Verificado PG real 2026-10-10 (DB puerto 5433): backend 192 passed, 0 failed; frontend 16/16 + tsc limpio; `openspec validate --all --strict` 5 passed, 0 failed. Decisiones: reuso token → 410 vía Redis (degrada 404 sin Redis); anónimo sin profesional_id → 422; expiración derivada `min(created_at+72h, inicio)`, cero migración (columna hash ya existía de C-04).
 - **Scope**:
   - Rutas públicas: `POST /reservas` (crea turno `pendiente` + token un solo uso, expira 72 h o al inicio; crea/matchea paciente mínimo nombre+teléfono), `GET /disponibilidad` pública, `GET /confirmar/:token` (confirma → `confirmado`; expirado → pantalla con teléfono consultorio)
   - Token: hash en DB, un solo uso, expiración (RN-TU-04); confirmación actualiza agenda sin intervención (RN-TU-03)

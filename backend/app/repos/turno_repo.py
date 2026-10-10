@@ -73,6 +73,12 @@ class TurnoRepository(BaseRepository[Turno]):
             await self.sesion.scalar(select(Turno.id).where(*condiciones).limit(1))
         ) is not None
 
+    async def por_token_hash(self, token_hash: str):
+        """Turno con ese hash de confirmacion (C-05, D-01; None si no hay)."""
+        return await self.sesion.scalar(
+            select(Turno).where(Turno.token_confirmacion_hash == token_hash).limit(1)
+        )
+
     async def listar_periodo(
         self,
         desde: datetime,

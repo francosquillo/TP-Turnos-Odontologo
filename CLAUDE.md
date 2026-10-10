@@ -101,6 +101,7 @@ Reglas derivadas del stack real + decisiones 2026-10-05 (confirmadas en checkpoi
 - NUNCA lógica fuera de capas → `backend/app/{api,servicios,repos,modelos,esquemas,worker,tests}`, `frontend/src/{features,shared,pages}` según `08`; soft-delete clínico/administrativo (RN-GL-01).
 - NUNCA buildear/commitear/pushear sin pedido explícito → proponer y esperar; commits convencionales sin co-autoría IA.
 - NUNCA `verify` sin Docker Desktop en marcha ni sin permiso explícito → ante pedido de verify, explicar que implica iniciar Docker Desktop + levantar `db+redis` + correr la verificación (alembic + pytest + frontend + validate) y pedir confirmación para usar esas aplicaciones; con OK, iniciar Docker Desktop (instalación per-usuario en `AppData\Local\Programs\DockerDesktop`), esperar al daemon, resolver puerto si PG18 ocupa 5432 (`POSTGRES_PORT=5433` + `DATABASE_URL_TEST` acorde) y ejecutar la verificación sin modificar código.
+- NUNCA dejar Docker Desktop corriendo tras cerrar la fase de verify → al terminar el verify (verde + fixes + archive o decisión de no archivar), hacer `docker compose down` (sin `-v`, volúmenes intactos) y cerrar Docker Desktop; confirmar daemon abajo.
 
 ---
 
