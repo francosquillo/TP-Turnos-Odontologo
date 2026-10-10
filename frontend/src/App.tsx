@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { AuthProveedor, useAuth } from "./shared/auth-context";
 import { RequireRole } from "./shared/RequireRole";
+import { AgendaPage } from "./features/agenda/AgendaPage";
 import { Confirmar } from "./pages/Confirmar";
 import { Login } from "./pages/Login";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "reservas" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "reservas" | "agenda" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -45,6 +46,9 @@ export function App(): JSX.Element {
         <button type="button" onClick={(): void => setPagina("reservas")}>
           Reservar
         </button>
+        <button type="button" onClick={(): void => setPagina("agenda")}>
+          Agenda
+        </button>
         <button type="button" onClick={(): void => setPagina("confirmar")}>
           Confirmar
         </button>
@@ -60,6 +64,14 @@ export function App(): JSX.Element {
       </nav>
       <main>
         {pagina === "reservas" && <Reservas />}
+        {pagina === "agenda" && (
+          <RequireRole
+            roles={["admin", "secretaria", "odontologo"]}
+            alternativa={<Login />}
+          >
+            <AgendaPage />
+          </RequireRole>
+        )}
         {pagina === "confirmar" && <Confirmar />}
         {pagina === "seguridad" && <Seguridad />}
         {pagina === "ingresar" && <Login />}

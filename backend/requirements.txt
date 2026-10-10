@@ -13,3 +13,4 @@ pyjwt==2.15.1
 pwdlib[argon2]==0.3.1
 bcrypt==5.0.0
 freezegun==1.5.5
+tzdata==2025.2  # zoneinfo en Windows (TZ America/Argentina/Buenos_Aires)

@@ -162,7 +162,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
 > Lo que más pondera la evaluación. Agente A a tiempo completo acá hasta C-05 verde.
 
 ### [C-04] `agenda-turnos-core`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 18/18 (2026-10-09) → `openspec/changes/archive/2026-10-09-c-04-agenda-turnos-core/` — GATE 3 abierto (desbloquea C-05/C-06/C-08). Verificado PG real 2026-10-09 (DB puerto 5433, Docker ya apagado): backend 151 passed, 0 failed, 0 skipped; frontend 8 passed + tsc limpio; `openspec validate --all --strict` 4 passed, 0 failed. Revisiones humanas ratificadas: ausente libera hueco (D-01 se mantiene), crear en pasado solo admin (opción A).
 - **Scope**:
   - Modelos: `Turno (paciente_id, profesional_id, sillon_id, inicio, fin, estado, origen, token_confirmacion hash nullable, sobre_turno bool)`
   - Migración 002: tabla turno + constraints `EXCLUDE USING gist (profesional WITH =, tstzrange WITH &&)` ídem sillón; sobreturno solo con `sobre_turno=true + motivo` auditado (RN-TU-02, RN-GL-02)

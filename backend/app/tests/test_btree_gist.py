@@ -38,6 +38,10 @@ async def test_btree_gist_extension_en_postgres_real():
     except ImportError:
         pytest.skip("asyncpg no instalado")
     dsn = os.getenv("DATABASE_URL_TEST", "postgresql://turnos:turnos@localhost:5432/turnos")
+    # asyncpg no entiende el dialecto SQLAlchemy (+asyncpg): mismo strippeo
+    # que db_utils.pg_reachable (fix verify C-04: sin esto el test skipeaba
+    # aun con PG arriba por "invalid DSN").
+    dsn = dsn.replace("+asyncpg", "")
     try:
         conn = await asyncpg.connect(dsn, timeout=3)
     except Exception as exc:

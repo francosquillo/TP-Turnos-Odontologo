@@ -14,6 +14,7 @@ from app.modelos.paciente import Paciente  # noqa: E402
 from app.modelos.profesional import Profesional  # noqa: E402
 from app.modelos.rol import Rol  # noqa: E402
 from app.modelos.sillon import Sillon  # noqa: E402
+from app.modelos.turno import Turno  # noqa: E402
 from app.modelos.usuario import Usuario  # noqa: E402
 
-__all__ = ["Base", "Paciente", "Profesional", "Rol", "Sillon", "Usuario"]
+__all__ = ["Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario"]

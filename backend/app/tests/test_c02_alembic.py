@@ -22,33 +22,10 @@ TABLAS_ESPERADAS = ("rol", "usuario", "paciente", "profesional", "sillon")
 
 
 async def _reset_estado_base(cfg, dsn: str) -> None:
-    """Reset idempotente antes del ciclo upgrade/downgrade.
+    """Delega en db_utils.reset_estado_base (incluye `turno`, fix C-04)."""
+    from db_utils import reset_estado_base
 
-    La suite comparte un unico PG y las fixtures create_all/drop_all no tocan
-    alembic_version: pueden dejar version=head con tablas borradas (o tablas
-    creadas por metadata con version=base). Sin este reset, `upgrade head`
-    seria no-op sobre un esquema vacio y el downgrade fallaria con
-    UndefinedTableError. No debilita asserts: solo fija el punto de partida.
-    """
-    import asyncio as _asyncio
-
-    from sqlalchemy import text as _text
-    from sqlalchemy.ext.asyncio import create_async_engine as _mk_engine
-
-    from alembic import command as _command
-
-    reset_engine = _mk_engine(dsn)
-    try:
-        async with reset_engine.begin() as conn:
-            await conn.execute(
-                _text(
-                    "DROP TABLE IF EXISTS sillon, profesional, paciente,"
-                    " usuario, rol CASCADE"
-                )
-            )
-        await _asyncio.to_thread(_command.stamp, cfg, "base")
-    finally:
-        await reset_engine.dispose()
+    await reset_estado_base(cfg, dsn)
 
 
 def test_alembic_importable():

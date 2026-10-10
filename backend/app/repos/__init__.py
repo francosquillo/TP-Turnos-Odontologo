@@ -4,6 +4,7 @@ from app.repos.paciente_repo import PacienteRepository
 from app.repos.profesional_repo import ProfesionalRepository
 from app.repos.rol_repo import RolRepository
 from app.repos.sillon_repo import SillonRepository
+from app.repos.turno_repo import TurnoRepository
 from app.repos.usuario_repo import UsuarioRepository
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "PacienteRepository",
     "ProfesionalRepository",
     "SillonRepository",
+    "TurnoRepository",
 ]

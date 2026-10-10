@@ -41,6 +41,10 @@ export class ApiError extends Error {
 const BASE_URL: string =
   import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+export function apiUrl(ruta: string): string {
+  return `${BASE_URL}${ruta}`;
+}
+
 function esHealthStatus(valor: unknown): valor is HealthStatus {
   if (typeof valor !== "object" || valor === null) return false;
   const v = valor as Record<string, unknown>;
