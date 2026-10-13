@@ -34,6 +34,12 @@ def _app_con(turnos=None, pacientes=None):
     from app.main import create_app
 
     app = create_app()
+    # Warmup: compila los TypeAdapter de ReservaIn con datetime real.
+    # freezegun parchea datetime y Pydantic no puede construirlos en freeze.
+    from app.esquemas.reserva import ReservaIn
+    from fastapi._compat import get_cached_model_fields
+
+    get_cached_model_fields(ReservaIn)
     turnos_repo = FakeTurnoRepoC05(turnos)
     tienda = FakeStore()
     app.dependency_overrides[get_usuario_repo] = lambda: FakeRepo(
@@ -80,9 +86,12 @@ def _cuerpo(inicio=LUNES_9, **cambios) -> dict:
 @pytest.mark.asyncio
 async def test_post_reserva_ok_201():
     """Task 2.2 RED: reserva valida sin Bearer -> 201 pendiente + token."""
+    from freezegun import freeze_time
+
     _, cliente, turnos_repo, _ = _app_con()
-    async with cliente as cli:
-        resp = await cli.post("/reservas", json=_cuerpo())
+    with freeze_time("2026-10-05 12:00:00"):
+        async with cliente as cli:
+            resp = await cli.post("/reservas", json=_cuerpo())
     assert resp.status_code == 201, resp.text
     cuerpo = resp.json()
     assert cuerpo["estado"] == "pendiente"
@@ -109,11 +118,14 @@ async def test_post_reserva_sin_bearer_ok():
 
     Triangula que lo protegido sigue cerrado: GET /turnos sin Bearer -> 401.
     """
+    from freezegun import freeze_time
+
     _, cliente, _, _ = _app_con()
-    async with cliente as cli:
-        ok = await cli.post("/reservas", json=_cuerpo())
-        assert ok.status_code == 201, ok.text
-        assert (await cli.get("/turnos")).status_code == 401
+    with freeze_time("2026-10-05 12:00:00"):
+        async with cliente as cli:
+            ok = await cli.post("/reservas", json=_cuerpo())
+            assert ok.status_code == 201, ok.text
+            assert (await cli.get("/turnos")).status_code == 401
 
 
 @pytest.mark.asyncio
@@ -146,10 +158,13 @@ async def test_post_reserva_invalida_422():
 @pytest.mark.asyncio
 async def test_confirmar_endpoint_200_actualiza_agenda():
     """Task 2.3 RED: GET /confirmar/:token valido -> 200 confirmado."""
+    from freezegun import freeze_time
+
     _, cliente, turnos_repo, _ = _app_con()
-    async with cliente as cli:
-        token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
-        resp = await cli.get(f"/confirmar/{token}")
+    with freeze_time("2026-10-05 12:00:00"):
+        async with cliente as cli:
+            token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
+            resp = await cli.get(f"/confirmar/{token}")
     assert resp.status_code == 200, resp.text
     cuerpo = resp.json()
     assert cuerpo["estado"] == "confirmado"
@@ -163,23 +178,29 @@ async def test_confirmar_endpoint_200_actualiza_agenda():
 @pytest.mark.asyncio
 async def test_confirmar_reuso_410():
     """Task 2.3 RED: segundo GET del mismo token -> 410."""
+    from freezegun import freeze_time
+
     _, cliente, _, _ = _app_con()
-    async with cliente as cli:
-        token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
-        assert (await cli.get(f"/confirmar/{token}")).status_code == 200
-        reuso = await cli.get(f"/confirmar/{token}")
+    with freeze_time("2026-10-05 12:00:00"):
+        async with cliente as cli:
+            token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
+            assert (await cli.get(f"/confirmar/{token}")).status_code == 200
+            reuso = await cli.get(f"/confirmar/{token}")
     assert reuso.status_code == 410, reuso.text
 
 
 @pytest.mark.asyncio
 async def test_confirmar_expirado_410_contacto():
     """Task 2.3 RED: token viejo -> 410 con contacto, sigue pendiente."""
+    from freezegun import freeze_time
+
     _, cliente, turnos_repo, _ = _app_con()
-    async with cliente as cli:
-        token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
-        turno = await turnos_repo.get(1)
-        turno.created_at = datetime.now(timezone.utc) - timedelta(hours=73)
-        resp = await cli.get(f"/confirmar/{token}")
+    with freeze_time("2026-10-05 12:00:00"):
+        async with cliente as cli:
+            token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
+            turno = await turnos_repo.get(1)
+            turno.created_at = datetime.now(timezone.utc) - timedelta(hours=73)
+            resp = await cli.get(f"/confirmar/{token}")
     assert resp.status_code == 410, resp.text
     assert resp.json()["contacto"]
     assert (await turnos_repo.get(1)).estado == "pendiente"
@@ -197,24 +218,27 @@ async def test_confirmar_desconocido_404():
 @pytest.mark.asyncio
 async def test_confirmar_alias_post_200_y_cancelado_410():
     """Triangulacion: alias POST confirma; cancelado -> 410 honesto."""
+    from freezegun import freeze_time
+
     from app.servicios import agenda_servicio
 
     _, cliente, turnos_repo, _ = _app_con()
-    async with cliente as cli:
-        token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
-        via_post = await cli.post(f"/confirmar/{token}")
-        assert via_post.status_code == 200, via_post.text
-        assert via_post.json()["estado"] == "confirmado"
-        token2 = (
-            await cli.post(
-                "/reservas",
-                json=_cuerpo(inicio=LUNES_9 + timedelta(minutes=30)),
+    with freeze_time("2026-10-05 12:00:00"):
+        async with cliente as cli:
+            token = (await cli.post("/reservas", json=_cuerpo())).json()["token"]
+            via_post = await cli.post(f"/confirmar/{token}")
+            assert via_post.status_code == 200, via_post.text
+            assert via_post.json()["estado"] == "confirmado"
+            token2 = (
+                await cli.post(
+                    "/reservas",
+                    json=_cuerpo(inicio=LUNES_9 + timedelta(minutes=30)),
+                )
+            ).json()["token"]
+            turno2 = await turnos_repo.get(2)
+            await agenda_servicio.cambiar_estado(
+                turnos_repo, turno2.id, "cancelado", motivo="cierre demo"
             )
-        ).json()["token"]
-        turno2 = await turnos_repo.get(2)
-        await agenda_servicio.cambiar_estado(
-            turnos_repo, turno2.id, "cancelado", motivo="cierre demo"
-        )
-        cancelado = await cli.get(f"/confirmar/{token2}")
+            cancelado = await cli.get(f"/confirmar/{token2}")
         assert cancelado.status_code == 410, cancelado.text
         assert "cancelado" in cancelado.json()["detail"]

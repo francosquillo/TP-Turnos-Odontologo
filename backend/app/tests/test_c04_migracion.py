@@ -121,6 +121,9 @@ async def test_c04_downgrade_002_tolerante_sin_indices(monkeypatch):
 
     Simula tabla turno preexistente (metadata/legacy) sin los indices de
     002: el downgrade no debe romper (DROP IF EXISTS).
+
+    No asume head fijo: baja explicito a 001 (debajo de 002) para que
+    `turno` quede revertida aunque head avance (003_notificacion C-06+).
     """
     from db_utils import dsn_test, pg_reachable, reset_estado_base
 
@@ -150,7 +153,11 @@ async def test_c04_downgrade_002_tolerante_sin_indices(monkeypatch):
         finally:
             await engine.dispose()
         # Hoy rompe: index "ix_turno_token_hash" does not exist.
-        await asyncio.to_thread(command.downgrade, cfg, "-1")
+        # Baja explicita a 001 (no "-1"): con head=003_notificacion (C-06),
+        # "-1" solo quitaria notificacion y turno seguiria existiendo.
+        await asyncio.to_thread(
+            command.downgrade, cfg, "001_core_identidad_pacientes"
+        )
 
         engine = create_async_engine(dsn_test())
         try:
@@ -159,6 +166,12 @@ async def test_c04_downgrade_002_tolerante_sin_indices(monkeypatch):
                     text("SELECT to_regclass('public.turno')")
                 )
                 assert existe is None, "turno deberia estar revertida tras downgrade"
+                existe_notif = await conn.scalar(
+                    text("SELECT to_regclass('public.notificacion')")
+                )
+                assert existe_notif is None, (
+                    "notificacion deberia estar revertida tras downgrade a 001"
+                )
         finally:
             await engine.dispose()
     finally:

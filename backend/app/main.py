@@ -13,6 +13,7 @@ from app.api import admin, agenda, auth, clinica, cobros, disponibilidad
 from app.api import notificaciones
 from app.api import obras_sociales as os_api
 from app.api import pacientes, profesionales, reservas, sillones, turnos
+from app.api import webhooks
 from app.core.config import get_settings
 
 
@@ -85,6 +86,7 @@ def create_app() -> FastAPI:
         cobros.router,
         os_api.router,
         notificaciones.router,
+        webhooks.router,
         admin.router,
     ):
         app.include_router(router)

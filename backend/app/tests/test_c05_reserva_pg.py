@@ -191,12 +191,20 @@ async def test_reserva_pg_concurrente_un_ganador(sesion_pg):
 
 
 def test_c05_sin_migracion_nueva():
-    """Task 4.1: cero DDL (solo 001 + 002; hash vive desde C-04)."""
+    """Task 4.1: C-05 fue cero DDL (hash vive desde C-04).
+
+    C-06 anadio legitimamente 003_notificacion.py (D-08 del change
+    c-06-notificaciones-whatsapp); se admite ese unico archivo conocido.
+    """
     versiones = sorted(
         (BACKEND_DIR / "alembic" / "versions").glob("*.py"),
     )
     nombres = [p.name for p in versiones if p.name != "__init__.py"]
-    assert nombres == ["001_core_identidad_pacientes.py", "002_turno.py"], nombres
+    assert nombres == [
+        "001_core_identidad_pacientes.py",
+        "002_turno.py",
+        "003_notificacion.py",  # C-06 (D-08): tabla notificacion + plantilla
+    ], nombres
     texto_002 = (BACKEND_DIR / "alembic" / "versions" / "002_turno.py").read_text()
     assert "token_confirmacion_hash" in texto_002
 

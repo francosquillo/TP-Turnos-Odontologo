@@ -195,7 +195,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/07_flujos_principales.md` §Flujo 1
 
 ### [C-06] `notificaciones-whatsapp`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 18/18 (2026-10-13) → `openspec/changes/archive/2026-10-13-c-06-notificaciones-whatsapp/` — GATE 5 [x] (C-04 ✓ + C-06 ✓, abre C-07 lista-espera-cierre-loop). Verificado PG/Redis reales 2026-10-13 (Docker): C-06 47/47 (barrido, idempotencia, firma, worker, reintentos), migración 002→003 limpia (C-08 no la tomó, sin colisión), frontend 16/16 + tsc limpio; `openspec validate --all --strict` 6 passed, 0 failed. Fixes post-verify: test downgrade C-04 (revisión explícita) + 14 tests fechas fijas con freezegun → full suite 239 passed 0 failed 0 skipped. Decisiones: idempotencia doble barrera (Redis `SET NX EX 49h` + UNIQUE parcial), cuerpo renderizado nunca persiste (solo variables), NO directo con motivo auditado + vocabulario cerrado (mejoras B post-TP: gracia/confirmación staff + fuzzy matching), mock default (`WHATSAPP_MOCK=true`).
 - **Scope**:
   - Modelos: `Notificacion (canal, plantilla, turno_id, estado, costo, payload sin PHI)`, plantillas seed: recordatorio 48/24 h, confirmación, hueco liberado, reseña Google
   - Worker Redis + cron horario: busca turnos `pendiente|confirmado` a 48/24 h, encola idempotente (`turno_id+tipo`), reintentos; registra estado + costo Meta (USD 0,026/ref visible)

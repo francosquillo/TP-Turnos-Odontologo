@@ -103,8 +103,8 @@ async def reset_estado_base(cfg, dsn: str) -> None:
         async with reset_engine.begin() as conn:
             await conn.execute(
                 _text(
-                    "DROP TABLE IF EXISTS turno, sillon, profesional, paciente,"
-                    " usuario, rol CASCADE"
+                    "DROP TABLE IF EXISTS notificacion, plantilla, turno, sillon,"
+                    " profesional, paciente, usuario, rol CASCADE"
                 )
             )
         await _asyncio.to_thread(_command.stamp, cfg, "base")

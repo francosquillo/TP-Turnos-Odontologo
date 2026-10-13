@@ -79,6 +79,24 @@ class TurnoRepository(BaseRepository[Turno]):
             select(Turno).where(Turno.token_confirmacion_hash == token_hash).limit(1)
         )
 
+    async def por_estado_y_rango(
+        self,
+        estados: tuple[str, ...],
+        desde: datetime,
+        hasta: datetime,
+    ) -> list[Turno]:
+        """Turnos en esos estados con inicio en [desde, hasta) (barrido C-06)."""
+        filas = await self.sesion.execute(
+            select(Turno)
+            .where(
+                Turno.estado.in_(estados),
+                Turno.inicio >= desde,
+                Turno.inicio < hasta,
+            )
+            .order_by(Turno.inicio)
+        )
+        return list(filas.scalars().all())
+
     async def listar_periodo(
         self,
         desde: datetime,

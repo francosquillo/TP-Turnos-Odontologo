@@ -4,8 +4,14 @@
 sobreturno, `creado_por=NULL`). `GET /confirmar/:token` (mas alias POST)
 confirma via la maquina existente. Desconocido -> 404 generico; reusado,
 expirado o no pendiente -> 410 (con contacto, sin exponer agenda ajena).
+
+C-06 task 6.1: confirmar con exito encola la plantilla `confirmacion` como
+efecto lateral aditivo y best-effort (nunca cambia el 200/404/410).
 """
-from fastapi import APIRouter
+import logging
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 
 from app.api.turnos import (
@@ -14,12 +20,24 @@ from app.api.turnos import (
     SillonRepoDep,
     TurnoRepoDep,
 )
+from app.api.webhooks import ClienteDep
 from app.core.deps import DbDep, StoreDep
 from app.esquemas.reserva import ConfirmarOut, ReservaIn, ReservaOut
+from app.repos.notificacion_repo import NotificacionRepository
 from app.servicios import agenda_servicio as agenda
 from app.servicios import reserva_servicio as reserva
 
 router = APIRouter(tags=["reservas"])
+
+_log = logging.getLogger(__name__)
+
+
+def get_notif_repo_reserva(db: DbDep) -> NotificacionRepository:
+    """Repo notificaciones sobre la sesion del request (overridible en tests)."""
+    return NotificacionRepository(db)
+
+
+NotifReservaDep = Annotated[NotificacionRepository, Depends(get_notif_repo_reserva)]
 
 
 def _conflicto(error: agenda.HuecoOcupadoError) -> JSONResponse:
@@ -89,7 +107,27 @@ async def crear_reserva_publica(
     )
 
 
-async def _confirmar(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreDep):
+async def _efecto_confirmacion(db, notifs, tienda, cliente, turno, pacientes) -> None:
+    """Encola `confirmacion` best-effort (C-06 6.1): nunca rompe el contrato."""
+    try:
+        from app.servicios import notificacion_servicio as notif_svc
+
+        paciente = await pacientes.get(turno.paciente_id)
+        nombre = str(getattr(paciente, "nombre", "") or "").split()
+        email = getattr(paciente, "email", None) if paciente else None
+        await notif_svc.encolar_confirmacion(
+            notifs, tienda, turno,
+            nombre_pila=nombre[0] if nombre else "paciente",
+            cliente=cliente, email=email,
+        )
+    except Exception as exc:  # noqa: BLE001 - aditivo, la confirmacion ya vale
+        _log.warning("efecto confirmacion omitido turno %s: %s",
+                     getattr(turno, "id", "?"), type(exc).__name__)
+
+
+async def _confirmar(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreDep,
+                     pacientes: PacienteRepoDep, notifs: NotifReservaDep,
+                     cliente: ClienteDep):
     """Logica compartida GET + alias POST (D-06: GET muta a proposito)."""
     try:
         turno = await reserva.confirmar_por_token(
@@ -110,6 +148,7 @@ async def _confirmar(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreD
         await db.rollback()
         return _no_confirmable(410, str(exc), reserva.CONTACTO_CONSULTORIO)
     await db.commit()
+    await _efecto_confirmacion(db, notifs, tienda, cliente, turno, pacientes)
     return ConfirmarOut(
         estado=turno.estado,
         inicio=turno.inicio,
@@ -119,15 +158,19 @@ async def _confirmar(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreD
 
 
 @router.get("/confirmar/{token}")
-async def confirmar_reserva(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreDep):
+async def confirmar_reserva(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreDep,
+                            pacientes: PacienteRepoDep, notifs: NotifReservaDep,
+                            cliente: ClienteDep):
     """Confirma en 1 clic (link de WhatsApp/mail hace GET, US-011)."""
-    return await _confirmar(token, db, turnos, tienda)
+    return await _confirmar(token, db, turnos, tienda, pacientes, notifs, cliente)
 
 
 @router.post("/confirmar/{token}")
-async def confirmar_reserva_post(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreDep):
+async def confirmar_reserva_post(token: str, db: DbDep, turnos: TurnoRepoDep, tienda: StoreDep,
+                                 pacientes: PacienteRepoDep, notifs: NotifReservaDep,
+                                 cliente: ClienteDep):
     """Alias programatico con identica logica (D-06)."""
-    return await _confirmar(token, db, turnos, tienda)
+    return await _confirmar(token, db, turnos, tienda, pacientes, notifs, cliente)
 
 
 __all__ = ["router"]

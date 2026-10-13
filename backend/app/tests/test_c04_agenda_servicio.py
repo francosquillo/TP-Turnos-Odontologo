@@ -84,6 +84,8 @@ def test_huecos_fuera_de_horario_vacio():
 @pytest.mark.asyncio
 async def test_crear_solape_sin_flag_409():
     """Task 2.3 RED: solape sin sobre_turno -> HuecoOcupadoError + alternativas."""
+    from freezegun import freeze_time
+
     from app.servicios.agenda_servicio import HuecoOcupadoError, crear_turno
 
     existente = fabricar_turno(
@@ -92,32 +94,8 @@ async def test_crear_solape_sin_flag_409():
         fin=datetime(2026, 10, 12, 8, 30, tzinfo=UTC),
     )
     turnos_repo, pacientes, profesionales, sillones = _repos(turnos=[existente])
-    with pytest.raises(HuecoOcupadoError) as exc_info:
-        await crear_turno(
-            turnos_repo,
-            pacientes,
-            profesionales,
-            sillones,
-            paciente_id=1,
-            profesional_id=1,
-            sillon_id=1,
-            inicio=datetime(2026, 10, 12, 8, 15, tzinfo=UTC),
-            fin=datetime(2026, 10, 12, 8, 45, tzinfo=UTC),
-            creado_por=7,
-        )
-    assert len(exc_info.value.alternativas) > 0
-    assert len((await turnos_repo.listar_periodo(LUNES, LUNES + timedelta(days=1), solo_activos=False))) == 1
-
-
-@pytest.mark.asyncio
-async def test_sobreturno_sin_motivo_rechazado():
-    """Task 2.3 RED: flag sin motivo (o motivo corto) -> 422 de validacion."""
-    from app.servicios.agenda_servicio import MotivoRequeridoError, crear_turno
-
-    existente = fabricar_turno(id=1)
-    for motivo in (None, "", "abc"):
-        turnos_repo, pacientes, profesionales, sillones = _repos(turnos=[existente])
-        with pytest.raises(MotivoRequeridoError):
+    with freeze_time("2026-10-05 12:00:00"):
+        with pytest.raises(HuecoOcupadoError) as exc_info:
             await crear_turno(
                 turnos_repo,
                 pacientes,
@@ -126,35 +104,66 @@ async def test_sobreturno_sin_motivo_rechazado():
                 paciente_id=1,
                 profesional_id=1,
                 sillon_id=1,
-                inicio=existente.inicio + timedelta(minutes=10),
-                fin=existente.fin + timedelta(minutes=10),
-                sobre_turno=True,
-                motivo_sobreturno=motivo,
+                inicio=datetime(2026, 10, 12, 8, 15, tzinfo=UTC),
+                fin=datetime(2026, 10, 12, 8, 45, tzinfo=UTC),
                 creado_por=7,
             )
+    assert len(exc_info.value.alternativas) > 0
+    assert len((await turnos_repo.listar_periodo(LUNES, LUNES + timedelta(days=1), solo_activos=False))) == 1
+
+
+@pytest.mark.asyncio
+async def test_sobreturno_sin_motivo_rechazado():
+    """Task 2.3 RED: flag sin motivo (o motivo corto) -> 422 de validacion."""
+    from freezegun import freeze_time
+
+    from app.servicios.agenda_servicio import MotivoRequeridoError, crear_turno
+
+    existente = fabricar_turno(id=1)
+    for motivo in (None, "", "abc"):
+        turnos_repo, pacientes, profesionales, sillones = _repos(turnos=[existente])
+        with freeze_time("2026-10-05 12:00:00"):
+            with pytest.raises(MotivoRequeridoError):
+                await crear_turno(
+                    turnos_repo,
+                    pacientes,
+                    profesionales,
+                    sillones,
+                    paciente_id=1,
+                    profesional_id=1,
+                    sillon_id=1,
+                    inicio=existente.inicio + timedelta(minutes=10),
+                    fin=existente.fin + timedelta(minutes=10),
+                    sobre_turno=True,
+                    motivo_sobreturno=motivo,
+                    creado_por=7,
+                )
 
 
 @pytest.mark.asyncio
 async def test_sobreturno_con_motivo_audita():
     """Task 2.3 RED: flag + motivo crea sobreturno con auditoria."""
+    from freezegun import freeze_time
+
     from app.servicios.agenda_servicio import crear_turno
 
     existente = fabricar_turno(id=1)
     turnos_repo, pacientes, profesionales, sillones = _repos(turnos=[existente])
-    turno = await crear_turno(
-        turnos_repo,
-        pacientes,
-        profesionales,
-        sillones,
-        paciente_id=1,
-        profesional_id=1,
-        sillon_id=1,
-        inicio=existente.inicio + timedelta(minutes=10),
-        fin=existente.fin + timedelta(minutes=10),
-        sobre_turno=True,
-        motivo_sobreturno="urgencia con dolor",
-        creado_por=7,
-    )
+    with freeze_time("2026-10-05 12:00:00"):
+        turno = await crear_turno(
+            turnos_repo,
+            pacientes,
+            profesionales,
+            sillones,
+            paciente_id=1,
+            profesional_id=1,
+            sillon_id=1,
+            inicio=existente.inicio + timedelta(minutes=10),
+            fin=existente.fin + timedelta(minutes=10),
+            sobre_turno=True,
+            motivo_sobreturno="urgencia con dolor",
+            creado_por=7,
+        )
     assert turno.sobre_turno is True
     assert turno.motivo_sobreturno == "urgencia con dolor"
     assert turno.creado_por == 7
@@ -163,36 +172,39 @@ async def test_sobreturno_con_motivo_audita():
 @pytest.mark.asyncio
 async def test_crear_turno_staff_nace_confirmado_y_online_pendiente():
     """Triangulacion: origen secretaria -> confirmado; online -> pendiente."""
+    from freezegun import freeze_time
+
     from app.servicios.agenda_servicio import crear_turno
 
     turnos_repo, pacientes, profesionales, sillones = _repos()
-    staff = await crear_turno(
-        turnos_repo,
-        pacientes,
-        profesionales,
-        sillones,
-        paciente_id=1,
-        profesional_id=1,
-        sillon_id=1,
-        inicio=datetime(2026, 10, 12, 8, 0, tzinfo=UTC),
-        fin=datetime(2026, 10, 12, 8, 30, tzinfo=UTC),
-        origen="secretaria",
-        creado_por=7,
-    )
-    assert staff.estado == "confirmado"
-    assert staff.token_confirmacion_hash is None
-    online = await crear_turno(
-        turnos_repo,
-        pacientes,
-        profesionales,
-        sillones,
-        paciente_id=1,
-        profesional_id=1,
-        sillon_id=1,
-        inicio=datetime(2026, 10, 12, 9, 0, tzinfo=UTC),
-        fin=datetime(2026, 10, 12, 9, 30, tzinfo=UTC),
-        origen="online",
-    )
+    with freeze_time("2026-10-05 12:00:00"):
+        staff = await crear_turno(
+            turnos_repo,
+            pacientes,
+            profesionales,
+            sillones,
+            paciente_id=1,
+            profesional_id=1,
+            sillon_id=1,
+            inicio=datetime(2026, 10, 12, 8, 0, tzinfo=UTC),
+            fin=datetime(2026, 10, 12, 8, 30, tzinfo=UTC),
+            origen="secretaria",
+            creado_por=7,
+        )
+        assert staff.estado == "confirmado"
+        assert staff.token_confirmacion_hash is None
+        online = await crear_turno(
+            turnos_repo,
+            pacientes,
+            profesionales,
+            sillones,
+            paciente_id=1,
+            profesional_id=1,
+            sillon_id=1,
+            inicio=datetime(2026, 10, 12, 9, 0, tzinfo=UTC),
+            fin=datetime(2026, 10, 12, 9, 30, tzinfo=UTC),
+            origen="online",
+        )
     assert online.estado == "pendiente"
 
 
@@ -233,6 +245,8 @@ async def test_creacion_concurrente_mismo_hueco_un_ganador():
     """Task 2.4 RED: 2 tareas mismo hueco -> 1 turno, la otra 409."""
     import asyncio
 
+    from freezegun import freeze_time
+
     from app.servicios.agenda_servicio import HuecoOcupadoError, crear_turno
 
     turnos_repo, pacientes, profesionales, sillones = _repos()
@@ -255,7 +269,8 @@ async def test_creacion_concurrente_mismo_hueco_un_ganador():
         except HuecoOcupadoError:
             return ("conflicto", None)
 
-    resultados = await asyncio.gather(_intento(), _intento())
+    with freeze_time("2026-10-05 12:00:00"):
+        resultados = await asyncio.gather(_intento(), _intento())
     assert sorted(r[0] for r in resultados) == ["conflicto", "ok"]
     persistidos = await turnos_repo.listar_periodo(
         LUNES, LUNES + timedelta(days=1), solo_activos=False
@@ -269,6 +284,8 @@ async def test_creacion_concurrente_mismo_hueco_un_ganador_pg(sesion_pg):
     import asyncio
 
     pytest.importorskip("asyncpg")
+    from freezegun import freeze_time
+
     from db_utils import dsn_test, pg_reachable
 
     ok, motivo = await pg_reachable()
@@ -322,7 +339,8 @@ async def test_creacion_concurrente_mismo_hueco_un_ganador_pg(sesion_pg):
                     await sesion.rollback()
                     return "conflicto"
 
-        resultados = await asyncio.gather(_intento(), _intento())
+        with freeze_time("2026-10-05 12:00:00"):
+            resultados = await asyncio.gather(_intento(), _intento())
         assert sorted(resultados) == ["conflicto", "ok"]
     finally:
         await engine.dispose()
@@ -420,6 +438,8 @@ async def test_crear_turno_mapea_fk_a_422_y_exclude_a_409():
     """
     from sqlalchemy.exc import IntegrityError
 
+    from freezegun import freeze_time
+
     from app.servicios.agenda_servicio import (
         EntidadNoEncontradaError,
         HuecoOcupadoError,
@@ -430,71 +450,76 @@ async def test_crear_turno_mapea_fk_a_422_y_exclude_a_409():
     fin = datetime(2026, 10, 12, 8, 30, tzinfo=UTC)
 
     _, pacientes, profesionales, sillones = _repos()
-    with pytest.raises(EntidadNoEncontradaError):
-        await crear_turno(
-            _TurnoRepoRoto(
-                _integrity_falso(
-                    'insert or update on table "turno" violates foreign key '
-                    'constraint "turno_creado_por_fkey" on table "turno"',
-                    "23503",
-                )
-            ),
-            pacientes,
-            profesionales,
-            sillones,
-            paciente_id=1,
-            profesional_id=1,
-            sillon_id=1,
-            inicio=inicio,
-            fin=fin,
-            creado_por=999999,
-        )
+    with freeze_time("2026-10-05 12:00:00"):
+        with pytest.raises(EntidadNoEncontradaError):
+            await crear_turno(
+                _TurnoRepoRoto(
+                    _integrity_falso(
+                        'insert or update on table "turno" violates foreign key '
+                        'constraint "turno_creado_por_fkey" on table "turno"',
+                        "23503",
+                    )
+                ),
+                pacientes,
+                profesionales,
+                sillones,
+                paciente_id=1,
+                profesional_id=1,
+                sillon_id=1,
+                inicio=inicio,
+                fin=fin,
+                creado_por=999999,
+            )
 
     _, pacientes, profesionales, sillones = _repos()
-    with pytest.raises(HuecoOcupadoError):
-        await crear_turno(
-            _TurnoRepoRoto(
-                _integrity_falso(
-                    'conflicting key value violates exclusion constraint '
-                    '"ex_turno_prof_sin_solape" on table "turno"',
-                    "23P01",
-                )
-            ),
-            pacientes,
-            profesionales,
-            sillones,
-            paciente_id=1,
-            profesional_id=1,
-            sillon_id=1,
-            inicio=inicio,
-            fin=fin,
-        )
+    with freeze_time("2026-10-05 12:00:00"):
+        with pytest.raises(HuecoOcupadoError):
+            await crear_turno(
+                _TurnoRepoRoto(
+                    _integrity_falso(
+                        'conflicting key value violates exclusion constraint '
+                        '"ex_turno_prof_sin_solape" on table "turno"',
+                        "23P01",
+                    )
+                ),
+                pacientes,
+                profesionales,
+                sillones,
+                paciente_id=1,
+                profesional_id=1,
+                sillon_id=1,
+                inicio=inicio,
+                fin=fin,
+            )
 
     _, pacientes, profesionales, sillones = _repos()
-    with pytest.raises(IntegrityError):
-        await crear_turno(
-            _TurnoRepoRoto(
-                _integrity_falso(
-                    'new row for relation "turno" violates check constraint '
-                    '"ck_turno_fin_mayor_inicio"',
-                    "23514",
-                )
-            ),
-            pacientes,
-            profesionales,
-            sillones,
-            paciente_id=1,
-            profesional_id=1,
-            sillon_id=1,
-            inicio=inicio,
-            fin=fin,
-        )
+    with freeze_time("2026-10-05 12:00:00"):
+        with pytest.raises(IntegrityError):
+            await crear_turno(
+                _TurnoRepoRoto(
+                    _integrity_falso(
+                        'new row for relation "turno" violates check constraint '
+                        '"ck_turno_fin_mayor_inicio"',
+                        "23514",
+                    )
+                ),
+                pacientes,
+                profesionales,
+                sillones,
+                paciente_id=1,
+                profesional_id=1,
+                sillon_id=1,
+                inicio=inicio,
+                fin=fin,
+            )
 
 
 @pytest.mark.asyncio
 async def test_crear_turno_creado_por_inexistente_422_en_pg(sesion_pg):
     """Fix-1 RED (verify, PG real): creado_por fantasma -> 422, no 409."""
     pytest.importorskip("asyncpg")
+    from freezegun import freeze_time
+
     from db_utils import dsn_test, pg_reachable
 
     ok, motivo = await pg_reachable()
@@ -527,19 +552,20 @@ async def test_crear_turno_creado_por_inexistente_422_en_pg(sesion_pg):
             await base.commit()
             ids = (paciente.id, profesional.id, sillon.id)
         async with Session() as sesion:
-            with pytest.raises(EntidadNoEncontradaError):
-                await crear_turno(
-                    TurnoRepository(sesion),
-                    PacienteRepository(sesion),
-                    ProfesionalRepository(sesion),
-                    SillonRepository(sesion),
-                    paciente_id=ids[0],
-                    profesional_id=ids[1],
-                    sillon_id=ids[2],
-                    inicio=datetime(2026, 10, 12, 8, 0, tzinfo=UTC),
-                    fin=datetime(2026, 10, 12, 8, 30, tzinfo=UTC),
-                    creado_por=999999,
-                )
+            with freeze_time("2026-10-05 12:00:00"):
+                with pytest.raises(EntidadNoEncontradaError):
+                    await crear_turno(
+                        TurnoRepository(sesion),
+                        PacienteRepository(sesion),
+                        ProfesionalRepository(sesion),
+                        SillonRepository(sesion),
+                        paciente_id=ids[0],
+                        profesional_id=ids[1],
+                        sillon_id=ids[2],
+                        inicio=datetime(2026, 10, 12, 8, 0, tzinfo=UTC),
+                        fin=datetime(2026, 10, 12, 8, 30, tzinfo=UTC),
+                        creado_por=999999,
+                    )
             await sesion.rollback()
     finally:
         await engine.dispose()
