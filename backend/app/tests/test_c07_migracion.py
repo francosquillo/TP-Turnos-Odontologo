@@ -16,21 +16,20 @@ ALEMBIC_DIR = Path(__file__).resolve().parents[2] / "alembic"  # backend/alembic
 
 
 def test_c07_migracion_head_encadena_003():
-    """Task 1.2 RED: una sola cabeza (004_espera) y la cadena incluye 003_notificacion.
+    """Task 1.2 RED: 004_espera está en la cadena sobre 003_notificacion y la cabeza es única.
 
     Solo lee los scripts de alembic (no toca la DB): corre siempre, sin Docker.
-    Si C-08 ocupa el 004, la cabeza pasa a 005_espera (renumeración, D-08).
+    C-08 agrega 005_clinica encima: la cabeza deja de ser 004_espera (C-08, D-01).
     """
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory(str(ALEMBIC_DIR))
     cabezas = script.get_heads()
     assert len(cabezas) == 1, f"esperada 1 cabeza, encontradas: {cabezas}"
-    assert cabezas[0] in ("004_espera", "005_espera"), f"cabeza inesperada: {cabezas[0]}"
     cadena = [r.revision for r in script.walk_revisions()]  # de la cabeza hacia la base
-    assert "003_notificacion" in cadena
-    assert cadena.index(cabezas[0]) < cadena.index("003_notificacion")
-    assert script.get_revision(cabezas[0]).down_revision in ("003_notificacion", "004_espera")
+    assert "004_espera" in cadena and "003_notificacion" in cadena
+    assert cadena.index("004_espera") < cadena.index("003_notificacion")
+    assert script.get_revision("004_espera").down_revision == "003_notificacion"
 
 
 def test_c07_migracion_declara_los_mismos_checks_e_indices_que_el_modelo():

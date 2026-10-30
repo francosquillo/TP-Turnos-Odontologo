@@ -79,4 +79,29 @@ describe("AgendaPage C-04", () => {
       String(url).includes("/estado") && (init as RequestInit)?.method === "PATCH",
     )).toHaveLength(0);
   });
+
+  it("con alAbrirOdontograma cada turno ofrece el acceso y lo invoca con el paciente correcto", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() => Promise.resolve(respuestaJson(TURNOS, 200))),
+    );
+    const alAbrir = vi.fn();
+    const usuario = userEvent.setup();
+    render(<AgendaPage alAbrirOdontograma={alAbrir} />);
+    const botones = await screen.findAllByRole("button", { name: /odontograma/i });
+    expect(botones).toHaveLength(2);
+    await usuario.click(botones[1] as HTMLElement);
+    expect(alAbrir).toHaveBeenCalledTimes(1);
+    expect(alAbrir.mock.calls[0]?.[0]).toMatchObject({ paciente_id: 2, paciente_nombre: "Otra Paciente" });
+  });
+
+  it("sin alAbrirOdontograma (admin) no hay acceso al odontograma", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(() => Promise.resolve(respuestaJson(TURNOS, 200))),
+    );
+    render(<AgendaPage />);
+    await screen.findByText("Demo Paciente");
+    expect(screen.queryByRole("button", { name: /odontograma/i })).toBeNull();
+  });
 });

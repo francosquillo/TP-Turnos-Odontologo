@@ -18,5 +18,11 @@ from app.modelos.turno import Turno  # noqa: E402
 from app.modelos.usuario import Usuario  # noqa: E402
 from app.modelos.notificacion import Notificacion, Plantilla  # noqa: E402
 from app.modelos.espera_entry import EsperaEntry  # noqa: E402
+from app.modelos.historia_clinica import HistoriaClinica  # noqa: E402
+from app.modelos.hallazgo_odontograma import (  # noqa: E402
+    EstadoHallazgoCatalogo,
+    HallazgoOdontograma,
+)
+from app.modelos.tratamiento import Tratamiento  # noqa: E402
 
-__all__ = ["Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario", "Notificacion", "Plantilla", "EsperaEntry"]
+__all__ = ["Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario", "Notificacion", "Plantilla", "EsperaEntry", "HistoriaClinica", "EstadoHallazgoCatalogo", "HallazgoOdontograma", "Tratamiento"]

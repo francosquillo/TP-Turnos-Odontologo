@@ -236,10 +236,10 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
 > C-08 corre en paralelo a C-04 desde GATE 2. C-09 es el join (necesita clínica + turnos).
 
 ### [C-08] `clinica-odontograma-hc`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 31/31 (2026-10-30) → `openspec/changes/archive/2026-10-30-c-08-clinica-odontograma-hc/` — Verificado mode full 2026-10-30: backend 519/519, frontend 97/97, tsc y build OK, single head `005_clinica`; `openspec validate --all --strict`: 0 errores reales (3/8 por 9 WARNINGS preexistentes de requirements >500 caracteres en 5 specs que C-08 no tocó, no corregidos). Spec principal creada: `openspec/specs/clinica-odontograma-hc/spec.md`. GATE 4 abierto para C-09 (C-04 y C-08 completos).
 - **Scope**:
   - Modelos: `HistoriaClinica (paciente_id unique, antecedentes, alergias)`, `HallazgoOdontograma (hc_id, pieza_fdi 11–48, cara, estado catálogo cerrado versionado, profesional_id)`, `Tratamiento` catálogo (código interno + código_nomenclador nullable, nombre, precio_base)
-  - Migración 003: HC + hallazgos + catálogo; índice `(hc_id, pieza_fdi)`; soft-delete HC
+  - Migración 005 (`005_clinica`): HC + hallazgos + catálogo; índice `(hc_id, pieza_fdi)`; soft-delete HC
   - Endpoints: `CRUD /historias`, `CRUD /odontograma/:hc_id/hallazgos`, `GET /tratamientos`, alergias siempre visibles en respuesta
   - Frontend `features/odontograma`: grilla FDI 11–48, caras, historial por pieza, sin PHI en logs
   - Tests: FDI válido/inválido, catálogo cerrado, historial por pieza, soft-delete

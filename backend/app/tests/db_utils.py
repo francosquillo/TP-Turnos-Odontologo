@@ -80,6 +80,21 @@ async def sesion_pg():
         await engine.dispose()
 
 
+async def cargar_catalogo_estados(sesion) -> None:
+    """Inserta el catálogo V1 (C-08, D-04): las fixtures usan create_all, no la migración."""
+    from app.modelos import EstadoHallazgoCatalogo
+    from app.modelos.hallazgo_odontograma import CATALOGO_ESTADOS_V1, CATALOGO_VERSION_V1
+
+    sesion.add_all(
+        EstadoHallazgoCatalogo(
+            codigo=codigo, version=CATALOGO_VERSION_V1, nombre=nombre,
+            alcance=alcance, vigente=True,
+        )
+        for codigo, nombre, alcance in CATALOGO_ESTADOS_V1
+    )
+    await sesion.flush()
+
+
 async def reset_estado_base(cfg, dsn: str) -> None:
     """Reset idempotente antes del ciclo upgrade/downgrade (C-02, C-04).
 
@@ -89,7 +104,7 @@ async def reset_estado_base(cfg, dsn: str) -> None:
     seria no-op sobre un esquema vacio y el downgrade fallaria con
     UndefinedTableError. Incluye `turno` (migracion 002, fix verify C-04):
     sin ella, un turno residual + stamp base rompia `upgrade head` con
-    DuplicateTableError. C-07 suma `espera_entry` (migracion 004) por lo mismo. No debilita asserts: solo fija el punto de partida.
+    DuplicateTableError. C-07 suma `espera_entry` (migracion 004) por lo mismo; C-08 suma las 4 tablas clinicas (migracion 005). No debilita asserts: solo fija el punto de partida.
     """
     import asyncio as _asyncio
 
@@ -103,7 +118,8 @@ async def reset_estado_base(cfg, dsn: str) -> None:
         async with reset_engine.begin() as conn:
             await conn.execute(
                 _text(
-                    "DROP TABLE IF EXISTS espera_entry, notificacion, plantilla, turno, sillon,"
+                    "DROP TABLE IF EXISTS hallazgo_odontograma, historia_clinica, estado_hallazgo_catalogo,"
+                    " tratamiento, espera_entry, notificacion, plantilla, turno, sillon,"
                     " profesional, paciente, usuario, rol CASCADE"
                 )
             )

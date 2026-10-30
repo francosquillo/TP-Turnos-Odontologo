@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { AuthProveedor, useAuth } from "./shared/auth-context";
 import { RequireRole } from "./shared/RequireRole";
 import { AgendaPage } from "./features/agenda/AgendaPage";
+import type { TurnoAgenda } from "./features/agenda/tipos";
 import { ListaEsperaPage } from "./features/lista-espera/ListaEsperaPage";
 import { Confirmar } from "./pages/Confirmar";
 import { Inicio } from "./pages/Inicio";
@@ -10,7 +11,7 @@ import { OfertaEspera } from "./pages/OfertaEspera";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "inicio" | "reservas" | "agenda" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -35,6 +36,33 @@ function Barra(): JSX.Element {
   );
 }
 
+// C-08: el odontograma se carga bajo demanda (no pesa en la landing publica).
+const OdontogramaPage = lazy(() =>
+  import("./features/odontograma/OdontogramaPage").then((m) => ({ default: m.OdontogramaPage })),
+);
+
+interface PacienteAbierto {
+  id: number;
+  nombre: string;
+}
+
+/** Agenda con acceso al odontograma solo para odontologo y secretaria (el admin no ve PHI). */
+function AgendaRuta({ alAbrir }: { alAbrir: (turno: TurnoAgenda) => void }): JSX.Element {
+  const { sesion } = useAuth();
+  const habilita = sesion?.rol === "odontologo" || sesion?.rol === "secretaria";
+  return <AgendaPage {...(habilita ? { alAbrirOdontograma: alAbrir } : {})} />;
+}
+
+function OdontogramaRuta({ paciente, alVolver }: { paciente: PacienteAbierto; alVolver: () => void }): JSX.Element {
+  const { sesion } = useAuth();
+  const rol = sesion?.rol === "odontologo" ? "odontologo" : "secretaria";
+  return (
+    <Suspense fallback={<p>Cargando odontograma…</p>}>
+      <OdontogramaPage pacienteId={paciente.id} pacienteNombre={paciente.nombre} rol={rol} alVolver={alVolver} />
+    </Suspense>
+  );
+}
+
 function PanelAdmin(): JSX.Element {
   return <p>Panel de administración (demo C-03)</p>;
 }
@@ -51,6 +79,7 @@ export function App(): JSX.Element {
   const [tokenOferta] = useState<string>(tokenDeRuta);
   const [pagina, setPagina] = useState<Pagina>(tokenOferta === "" ? "inicio" : "oferta-espera");
   const [tokenConfirmar, setTokenConfirmar] = useState<string>("");
+  const [paciente, setPaciente] = useState<PacienteAbierto | null>(null);
 
   function irAPagina(destino: string): void {
     if (destino === "reservas" || destino === "seguridad" || destino === "inicio") {
@@ -102,7 +131,20 @@ export function App(): JSX.Element {
             roles={["admin", "secretaria", "odontologo"]}
             alternativa={<Login />}
           >
-            <AgendaPage />
+            <AgendaRuta
+              alAbrir={(turno: TurnoAgenda): void => {
+                setPaciente({
+                  id: turno.paciente_id,
+                  nombre: turno.paciente_nombre ?? `Paciente ${turno.paciente_id}`,
+                });
+                setPagina("odontograma");
+              }}
+            />
+          </RequireRole>
+        )}
+        {pagina === "odontograma" && paciente !== null && (
+          <RequireRole roles={["secretaria", "odontologo"]} alternativa={<Login />}>
+            <OdontogramaRuta paciente={paciente} alVolver={(): void => setPagina("agenda")} />
           </RequireRole>
         )}
         {pagina === "espera" && (

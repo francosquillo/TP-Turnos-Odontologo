@@ -8,6 +8,8 @@ interface Props {
   alCancelar: (turno: TurnoAgenda) => void;
   alConfirmar: (turno: TurnoAgenda) => void;
   alMarcar: (turno: TurnoAgenda, estado: "asistido" | "ausente") => void;
+  /** C-08: solo odontologo y secretaria lo reciben; sin esta funcion no hay acceso. */
+  alAbrirOdontograma?: (turno: TurnoAgenda) => void;
 }
 
 export function TurnoCard({
@@ -16,6 +18,7 @@ export function TurnoCard({
   alCancelar,
   alConfirmar,
   alMarcar,
+  alAbrirOdontograma,
 }: Props): JSX.Element {
   return (
     <article
@@ -42,6 +45,11 @@ export function TurnoCard({
         {(turno.estado === "pendiente" || turno.estado === "confirmado") && (
           <button type="button" onClick={(): void => alCancelar(turno)}>
             Cancelar
+          </button>
+        )}
+        {alAbrirOdontograma !== undefined && (
+          <button type="button" onClick={(): void => alAbrirOdontograma(turno)}>
+            Odontograma
           </button>
         )}
         {turno.estado === "confirmado" && (

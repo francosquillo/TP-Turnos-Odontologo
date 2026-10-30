@@ -205,6 +205,7 @@ def test_c05_sin_migracion_nueva():
         "002_turno.py",
         "003_notificacion.py",  # C-06 (D-08): tabla notificacion + plantilla
         "004_espera.py",  # C-07 (D-08): tabla espera_entry
+        "005_clinica.py",  # C-08 (D-01): historia clinica + odontograma
     ], nombres
     texto_002 = (BACKEND_DIR / "alembic" / "versions" / "002_turno.py").read_text()
     assert "token_confirmacion_hash" in texto_002

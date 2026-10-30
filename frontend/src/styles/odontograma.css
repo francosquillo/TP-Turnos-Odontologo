@@ -1,0 +1,67 @@
+/* Estilos del odontograma (C-08). Solo variables de ./tokens.css (Revision 1):
+ * sin colores literales ni tokens nuevos. Reutiliza .btn, .field, .input, .banner
+ * y .badge de lista-espera.css (extraidos de design-system/components.html).
+ * El color nunca informa solo: cada estado lleva texto. */
+
+.odonto { max-width: var(--container-max); margin: 0 auto; padding: var(--space-4) var(--gutter); font-family: var(--font-sans); color: var(--color-text); }
+.odonto h2 { font-size: var(--text-xl); line-height: var(--leading-tight); margin: 0 0 var(--space-3); }
+.odonto h3 { font-size: var(--text-lg); line-height: var(--leading-tight); margin: 0 0 var(--space-2); }
+.odonto .muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+.odonto-cabecera { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+
+/* Aviso de alergias: siempre a la vista al desplazarse */
+.odonto-alergias { position: sticky; top: 0; z-index: 1; margin-bottom: var(--space-4); box-shadow: var(--shadow-sm); }
+.odonto-alergias .banner-texto { overflow-wrap: anywhere; }
+
+/* Grilla: un cuadrante por fila en movil, los cuatro en cruz en escritorio */
+.odonto-grilla { display: grid; grid-template-columns: 1fr; gap: var(--space-4); margin-bottom: var(--space-5); }
+.odonto-cuadrante { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); }
+.odonto-cuadrante-titulo { margin: 0 0 var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--color-text-muted); }
+.odonto-piezas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+
+.odonto-pieza {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: var(--space-1);
+  min-height: var(--target-min); min-width: var(--target-min); padding: var(--space-2) var(--space-1);
+  font: inherit; color: var(--color-text); text-align: center;
+  background: var(--color-surface-alt); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+}
+.odonto-pieza:hover { background: var(--color-primary-soft); }
+.odonto-pieza:active { transform: scale(0.97); }
+.odonto-pieza:focus-visible, .odonto-baja-form :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+.odonto-pieza[aria-pressed="true"] { border-color: var(--color-primary); border-width: 3px; background: var(--color-primary-soft); }
+.odonto-pieza-numero { font-weight: var(--weight-bold); font-size: var(--text-md); font-variant-numeric: tabular-nums; }
+.odonto-pieza-estado { font-size: var(--text-xs); line-height: var(--leading-tight); overflow-wrap: break-word; max-width: 100%; }
+
+.odonto-pieza[data-estado="caries"] { background: var(--color-danger-soft); }
+.odonto-pieza[data-estado="obturacion"] { background: var(--estado-confirmado-bg); }
+.odonto-pieza[data-estado="sano"] { background: var(--estado-asistido-bg); }
+.odonto-pieza[data-estado="ausente"] { background: var(--estado-ausente-bg); }
+.odonto-pieza[data-estado="corona"], .odonto-pieza[data-estado="implante"], .odonto-pieza[data-estado="endodoncia"] { background: var(--espera-ofrecida-bg); }
+.odonto-pieza[aria-pressed="true"][data-estado] { box-shadow: inset 0 0 0 2px var(--color-primary); }
+
+/* Detalle de pieza e historial */
+.odonto-detalle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); margin-bottom: var(--space-4); }
+.odonto-vigente { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.odonto-historial { list-style: none; margin: 0 0 var(--space-4); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.odonto-historial li { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); display: grid; gap: var(--space-1); }
+.odonto-historial li:last-child { border-bottom: 0; }
+.odonto-historial li[data-anulado="true"] { background: var(--color-surface-alt); color: var(--color-text-muted); }
+.odonto-historial .titulo { font-weight: var(--weight-medium); }
+.odonto-historial li[data-anulado="true"] .titulo { text-decoration: line-through; }
+.odonto-acciones { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.odonto-form, .odonto-baja-form { background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin-top: var(--space-2); }
+.odonto-form .row { align-items: flex-end; }
+.odonto-historia-form { margin-bottom: var(--space-4); }
+
+@media (min-width: 1024px) {
+  .odonto-grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .odonto-piezas { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .odonto-piezas { gap: var(--space-1); }
+  .odonto-pieza { padding-left: 0; padding-right: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .odonto-pieza { transition: none; }
+  .odonto-pieza:active { transform: none; }
+}

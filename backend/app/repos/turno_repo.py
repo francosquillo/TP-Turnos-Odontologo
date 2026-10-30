@@ -73,6 +73,23 @@ class TurnoRepository(BaseRepository[Turno]):
             await self.sesion.scalar(select(Turno.id).where(*condiciones).limit(1))
         ) is not None
 
+    async def existe_vinculo(self, profesional_id: int, paciente_id: int) -> bool:
+        """True si el profesional tiene algun turno NO cancelado con el paciente (C-08, D-07).
+
+        Cualquier fecha: permite preparar la consulta con un turno futuro.
+        """
+        return (
+            await self.sesion.scalar(
+                select(Turno.id)
+                .where(
+                    Turno.profesional_id == profesional_id,
+                    Turno.paciente_id == paciente_id,
+                    Turno.estado != "cancelado",
+                )
+                .limit(1)
+            )
+        ) is not None
+
     async def por_token_hash(self, token_hash: str):
         """Turno con ese hash de confirmacion (C-05, D-01; None si no hay)."""
         return await self.sesion.scalar(

@@ -16,5 +16,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Solo el CSS del odontograma se procesa en tests: el test de tokens (C-08) lo lee con ?raw.
+    css: { include: [/odontograma\.css/] },
   },
 });

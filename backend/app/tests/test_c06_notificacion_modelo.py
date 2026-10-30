@@ -82,7 +82,11 @@ def test_migracion_003_existe_y_encadena_002():
 
 
 def test_c06_migracion_head_encadena_002():
-    """Task 1.2 RED (unit): cadena unica 001 -> 002 -> 003 sin cabezas dobles."""
+    """Task 1.2 RED (unit): cadena unica sin cabezas dobles.
+
+    C-08: el regex no cruza lineas: un docstring que empieza con
+    "down_revision" (004_espera) hacia que capture otra revision.
+    """
     import re
 
     revisiones: dict[str, str | None] = {}
@@ -91,7 +95,7 @@ def test_c06_migracion_head_encadena_002():
             continue
         texto = archivo.read_text(encoding="utf-8")
         rev = re.search(r"^revision:\s*str\s*=\s*[\"']([^\"']+)", texto, re.M)
-        down = re.search(r"^down_revision[^=]*=\s*[\"']([^\"']+)", texto, re.M)
+        down = re.search(r"^down_revision[^=\n]*=\s*[\"']([^\"']+)", texto, re.M)
         assert rev, f"{archivo.name} sin revision"
         revisiones[rev.group(1)] = down.group(1) if down else None
     apuntadas = {d for d in revisiones.values() if d}

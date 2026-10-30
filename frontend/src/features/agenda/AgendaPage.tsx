@@ -19,7 +19,12 @@ function hoyLocal(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function AgendaPage(): JSX.Element {
+interface Props {
+  /** C-08: abre el odontograma del paciente del turno (odontologo y secretaria). */
+  alAbrirOdontograma?: (turno: TurnoAgenda) => void;
+}
+
+export function AgendaPage({ alAbrirOdontograma }: Props = {}): JSX.Element {
   const [vista, setVista] = useState<VistaAgenda>("dia");
   const [fecha, setFecha] = useState<string>(hoyLocal());
   const [turnos, setTurnos] = useState<TurnoAgenda[]>([]);
@@ -192,6 +197,7 @@ export function AgendaPage(): JSX.Element {
               alMarcar={(t, estado): void => {
                 void alMarcar(t, estado);
               }}
+              {...(alAbrirOdontograma === undefined ? {} : { alAbrirOdontograma })}
             />
           ))}
         </div>
