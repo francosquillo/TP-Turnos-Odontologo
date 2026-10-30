@@ -1,0 +1,23 @@
+{
+  "skill_name": "tp-verify-docker",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Verificá el change c-07 (lista de espera) en modo quick: levantá docker, corré pytest -k lista_espera + tsc --noEmit, y dame el reporte VERDE/ROJO con counts y shutdown seguro.",
+      "expected_output": "Quick report with Backend x/y + tsc result, migration heads noted, nuevos vs pre-existentes clasificados, Docker apagado SI, veredicto + next action (archive vs fix).",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Full verify para archivar c-08 (cobros y caja) en TP-Turnos-Odontologo: migración limpia desde cero (heads 001/002/003, btree_gist), suite backend completa, vitest + tsc + build, openspec validate --all --strict, hard rules RN-CO (saldo derivado, contramovimiento), y reporte VERDE/ROJO con next action.",
+      "expected_output": "Full report with all layers + migration limpia SI/NO + hard-rule check + classified failures + Docker apagado + explicit archive/fix recommendation.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "El verify del change c-05 dice 15 tests failed. Clasificá cuáles son nuevos vs pre-existentes (re-corriendo en base si hace falta), aplicá retry x3 a los de overlap concurrente, y decime si el veredicto es VERDE o ROJO con los archivos a fixear.",
+      "expected_output": "Failure classification table (new/pre-existing/flaky-after-retry), verdict with justification, concrete fix file list or archive approval.",
+      "files": []
+    }
+  ]
+}

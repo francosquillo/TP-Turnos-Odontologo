@@ -62,6 +62,8 @@ Cargá la skill correspondiente al contexto ANTES de escribir código.
 
 Detalle Change→Skills: ver `.atl/skill-registry.md` §Change → Skills (C-01→C-12).
 
+Skill versionada en el repo: [.claude/skills/tp-verify-docker/](.claude/skills/tp-verify-docker/SKILL.md) — flujo de verify con Docker (modo `full` antes de cada archive). Si tu agente no la detecta solo, leé ese `SKILL.md` y su overlay `references/tp-turnos-config.md`.
+
 ---
 
 ## Roadmap de Changes
