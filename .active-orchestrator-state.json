@@ -117,7 +117,7 @@
     ]
   },
   "step": "done",
-  "version": 4,
+  "version": 5,
   "skills": {
     "created_by": "find-skill (recommend-only, active-orchestrator fallback manual — sub-skill find-skill no disponible en entorno, npx bloqueado por ExecutionPolicy)",
     "recommended": [
@@ -175,5 +175,12 @@
       "capas-08-soft-delete",
       "no-build-commit-push-sin-pedido"
     ]
+  },
+  "visual_design": {
+    "created_by": "design-system",
+    "mode": "system-only",
+    "status": "approved",
+    "revision": 1,
+    "path": "design-system/README.md"
   }
 }

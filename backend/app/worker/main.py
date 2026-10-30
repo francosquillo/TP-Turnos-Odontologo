@@ -63,11 +63,38 @@ async def bucle_notif(intervalo_s: float = 3600.0) -> None:
         await asyncio.sleep(intervalo_s)
 
 
+async def bucle_espera(intervalo_s: float = 600.0) -> None:
+    """Tick cada 10 min: barrido de ofertas vencidas de lista de espera (D-05)."""
+    from app.worker import espera_jobs as espera_jobs
+    from app.repos.espera_repo import EsperaRepository
+    from app.repos.profesional_repo import ProfesionalRepository
+    from app.repos.sillon_repo import SillonRepository
+    from app.repos.paciente_repo import PacienteRepository as PacienteRepoClass
+
+    fabrica, tienda, cliente, TurnoRepo, PacienteRepo, NotifRepo = _componentes()
+    while True:
+        try:
+            async with fabrica() as sesion:
+                stats = await espera_jobs.barrido_vencidas(
+                    EsperaRepository(sesion), TurnoRepo(sesion),
+                    ProfesionalRepository(sesion),
+                    SillonRepository(sesion),
+                    PacienteRepoClass(sesion),
+                    NotifRepo(sesion), tienda, cliente,
+                    commit=sesion.commit, rollback=sesion.rollback,
+                )
+                if stats["vencidas"] or stats["errores"]:
+                    logger.info("barrido espera: %s", stats)
+        except Exception as exc:  # noqa: BLE001 - el worker nunca se cae
+            logger.warning("tick espera fallo (reintenta en 10 min): %s", type(exc).__name__)
+        await asyncio.sleep(intervalo_s)
+
+
 async def main() -> None:
     """Arranque: recuperacion con ventana extendida + loops en paralelo."""
     from app.worker import notif_jobs as jobs
 
-    logger.info("worker C-06 iniciado (heartbeat + notificaciones)")
+    logger.info("worker C-06/C-07 iniciado (heartbeat + notificaciones + espera)")
     try:
         fabrica, tienda, cliente, TurnoRepo, PacienteRepo, NotifRepo = _componentes()
         async with fabrica() as sesion:
@@ -78,7 +105,7 @@ async def main() -> None:
             logger.info("barrido recuperacion al arranque: %s", stats)
     except Exception as exc:  # noqa: BLE001 - sin DB/Redis el worker late igual
         logger.warning("recuperacion inicial omitida: %s", type(exc).__name__)
-    await asyncio.gather(heartbeat(), bucle_notif())
+    await asyncio.gather(heartbeat(), bucle_notif(), bucle_espera())
 
 
 if __name__ == "__main__":

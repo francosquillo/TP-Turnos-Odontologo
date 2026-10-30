@@ -17,5 +17,6 @@ from app.modelos.sillon import Sillon  # noqa: E402
 from app.modelos.turno import Turno  # noqa: E402
 from app.modelos.usuario import Usuario  # noqa: E402
 from app.modelos.notificacion import Notificacion, Plantilla  # noqa: E402
+from app.modelos.espera_entry import EsperaEntry  # noqa: E402
 
-__all__ = ["Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario", "Notificacion", "Plantilla"]
+__all__ = ["Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario", "Notificacion", "Plantilla", "EsperaEntry"]

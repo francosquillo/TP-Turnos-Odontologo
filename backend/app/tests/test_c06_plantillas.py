@@ -1,6 +1,6 @@
 """C-06 tasks 1.3/1.4 + 6.2 RED: seed plantillas, render estricto y sin-PHI (D-02).
 
-Unit (siempre corre, fakes en memoria): doble seed -> 5 filas v1; variable
+Unit (siempre corre, fakes en memoria): doble seed -> 6 filas v1; variable
 no declarada -> 422 sin envio; plantillas + payloads sin terminos clinicos
 ni digitos largos; la fila guarda variables, no el cuerpo; hueco_liberado
 acepta {expira_en} declarada para C-07 sin migrar (6.2).
@@ -20,13 +20,13 @@ from db_utils import sesion_pg  # noqa: E402, F401
 
 
 def test_seed_plantillas_idempotente():
-    """Task 1.3 RED: doble seed -> exactamente 5 plantillas en v1."""
+    """Task 1.3 RED: doble seed -> exactamente 6 plantillas en v1 (5 de C-06 + oferta_lista_espera de C-07)."""
     from app.core.seed_plantillas import contar_plantillas, sembrar_plantillas
 
     almacen: dict = {}
-    assert sembrar_plantillas(almacen) == 5
-    assert sembrar_plantillas(almacen) == 5
-    assert contar_plantillas(almacen) == 5
+    assert sembrar_plantillas(almacen) == 6
+    assert sembrar_plantillas(almacen) == 6
+    assert contar_plantillas(almacen) == 6
 
 
 def test_render_variable_no_declarada_422():
@@ -63,12 +63,12 @@ def test_render_faltante_422():
 
 
 def test_plantillas_sin_phi():
-    """Task 1.4 RED: las 5 plantillas + payloads no matchean clinica ni digitos."""
+    """Task 1.4 RED: las 6 plantillas (C-06 + oferta C-07) + payloads no matchean clinica ni digitos."""
     from app.core.seed_plantillas import PLANTILLAS_V1, render_plantilla, sin_phi
 
     assert set(PLANTILLAS_V1) == {
         "recordatorio_48h", "recordatorio_24h", "confirmacion",
-        "hueco_liberado", "resena_google",
+        "hueco_liberado", "resena_google", "oferta_lista_espera",
     }
     for nombre, datos in PLANTILLAS_V1.items():
         assert sin_phi(datos["cuerpo"]), f"PHI en plantilla {nombre}"
@@ -99,11 +99,11 @@ def test_payload_no_persiste_cuerpo():
 
 @pytest.mark.asyncio
 async def test_seed_pg_idempotente(sesion_pg):
-    """Task 1.3 GREEN (PG real): doble seed real -> 5 filas v1."""
+    """Task 1.3 GREEN (PG real): doble seed real -> 6 filas v1."""
     from app.core.seed_plantillas import sembrar_plantillas_pg
     from app.repos.notificacion_repo import PlantillaRepository
 
     repo = PlantillaRepository(sesion_pg)
-    assert await sembrar_plantillas_pg(repo) == 5
-    assert await sembrar_plantillas_pg(repo) == 5
-    assert await repo.contar_version("v1") == 5
+    assert await sembrar_plantillas_pg(repo) == 6
+    assert await sembrar_plantillas_pg(repo) == 6
+    assert await repo.contar_version("v1") == 6

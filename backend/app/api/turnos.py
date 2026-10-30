@@ -10,7 +10,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
-from app.core.deps import DbDep, require_role
+from app.api.notificaciones import NotifRepoDep
+from app.api.espera_hook import (
+    ClienteEsperaDep,
+    EsperaRepoDep,
+    ofrecer_tras_cancelacion,
+)
+from app.core.deps import DbDep, StoreDep, require_role
 from app.esquemas.turno import EstadoPatch, ReprogramarIn, TurnoIn, TurnoOut
 from app.modelos import Usuario
 from app.repos.paciente_repo import PacienteRepository
@@ -18,6 +24,7 @@ from app.repos.profesional_repo import ProfesionalRepository
 from app.repos.sillon_repo import SillonRepository
 from app.repos.turno_repo import TurnoRepository
 from app.servicios import agenda_servicio as svc
+
 
 router = APIRouter(prefix="/turnos", tags=["turnos"])
 
@@ -187,8 +194,18 @@ async def cambiar_estado(
     db: DbDep,
     turnos: TurnoRepoDep,
     profesionales: ProfesionalRepoDep,
+    pacientes: PacienteRepoDep,
+    espera: EsperaRepoDep,
+    notifs: NotifRepoDep,
+    tienda: StoreDep,
+    cliente: ClienteEsperaDep,
+    sillones: SillonRepoDep,
 ) -> TurnoOut:
-    """Avanza la maquina D-03 (odontologo: asistido/ausente propios)."""
+    """Avanza la maquina D-03 (odontologo: asistido/ausente propios).
+
+    Tras cancelado, dispara oferta a la lista de espera (aditivo D-02;
+    el cancelado nunca se revierte por un fallo de oferta).
+    """
     if _es_odontologo(usuario):
         if datos.estado not in ("asistido", "ausente"):
             raise HTTPException(status_code=403, detail="sin permiso")
@@ -210,6 +227,14 @@ async def cambiar_estado(
         await db.rollback()
         raise HTTPException(status_code=422, detail=str(exc)) from None
     await db.commit()
+    # --- Aditivo C-07: oferta a lista de espera tras cancelado -------------
+    if datos.estado == "cancelado":
+        await ofrecer_tras_cancelacion(
+            db=db, turno=turno, espera_repo=espera, turnos_repo=turnos,
+            profesionales_repo=profesionales, sillones_repo=sillones,
+            pacientes_repo=pacientes, notif_repo=notifs, tienda=tienda,
+            cliente=cliente,
+        )
     return _a_out(turno)
 
 

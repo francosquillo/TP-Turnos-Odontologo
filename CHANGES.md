@@ -213,7 +213,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/08_arquitectura_propuesta.md` §Worker + cola
 
 ### [C-07] `lista-espera-cierre-loop`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 18/18 (2026-10-30) → `openspec/changes/archive/2026-10-30-c-07-lista-espera-cierre-loop/` — Verificado PG 16 + Redis 7 reales 2026-10-30 (Docker): backend 318/318 (0 skipped, deps pinneadas), frontend 37/37, tsc y build OK, migración limpia 003→`004_espera`; `openspec validate --all --strict`: 0 errores, warnings aceptados por el usuario (8 de requirements >500 caracteres, 1 de ellos en C-07, + 1 de proposal "Why" >1000 caracteres en C-07; no se reescriben requirements). Spec principal creada: `openspec/specs/lista-espera-cierre-loop/spec.md`. Decisiones: sin pre-chequeo al ofrecer (arbitraje al aceptar), hash del token como tombstone (reuso → 410), notificación previa `fallida` con motivo `oferta_superada`, sistema de diseño Revision 1 aprobado (modo system-only).
 - **Scope**:
   - Modelo `EsperaEntry (paciente_id, profesional_id/especialidad, preferencia_horaria, estado activa|ofrecida|convertida|vencida)`
   - Endpoints: `CRUD /lista-espera`, `POST /lista-espera/:id/ofrecer`, conversión a turno `confirmado`

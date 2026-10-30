@@ -2,13 +2,15 @@ import { useState } from "react";
 import { AuthProveedor, useAuth } from "./shared/auth-context";
 import { RequireRole } from "./shared/RequireRole";
 import { AgendaPage } from "./features/agenda/AgendaPage";
+import { ListaEsperaPage } from "./features/lista-espera/ListaEsperaPage";
 import { Confirmar } from "./pages/Confirmar";
 import { Inicio } from "./pages/Inicio";
 import { Login } from "./pages/Login";
+import { OfertaEspera } from "./pages/OfertaEspera";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "inicio" | "reservas" | "agenda" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "inicio" | "reservas" | "agenda" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -37,8 +39,17 @@ function PanelAdmin(): JSX.Element {
   return <p>Panel de administración (demo C-03)</p>;
 }
 
+const RUTA_OFERTA = /^\/lista-espera\/([^/]+)\/?$/;
+
+/** Token de la ruta publica `/lista-espera/:token` ("" si la URL es otra). */
+function tokenDeRuta(): string {
+  const coincide = RUTA_OFERTA.exec(window.location.pathname);
+  return coincide?.[1] === undefined ? "" : decodeURIComponent(coincide[1]);
+}
+
 export function App(): JSX.Element {
-  const [pagina, setPagina] = useState<Pagina>("inicio");
+  const [tokenOferta] = useState<string>(tokenDeRuta);
+  const [pagina, setPagina] = useState<Pagina>(tokenOferta === "" ? "inicio" : "oferta-espera");
   const [tokenConfirmar, setTokenConfirmar] = useState<string>("");
 
   function irAPagina(destino: string): void {
@@ -59,6 +70,9 @@ export function App(): JSX.Element {
         </button>
         <button type="button" onClick={(): void => setPagina("agenda")}>
           Agenda
+        </button>
+        <button type="button" onClick={(): void => setPagina("espera")}>
+          Lista de espera
         </button>
         <button type="button" onClick={(): void => setPagina("confirmar")}>
           Confirmar
@@ -91,6 +105,12 @@ export function App(): JSX.Element {
             <AgendaPage />
           </RequireRole>
         )}
+        {pagina === "espera" && (
+          <RequireRole roles={["admin", "secretaria"]} alternativa={<Login />}>
+            <ListaEsperaPage />
+          </RequireRole>
+        )}
+        {pagina === "oferta-espera" && <OfertaEspera token={tokenOferta} />}
         {pagina === "confirmar" && <Confirmar token={tokenConfirmar} />}
         {pagina === "seguridad" && <Seguridad />}
         {pagina === "ingresar" && <Login />}

@@ -22,8 +22,14 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from app.api.espera_hook import EsperaRepoDep, ofrecer_tras_cancelacion
 from app.api.notificaciones import NotifRepoDep
-from app.api.turnos import PacienteRepoDep, TurnoRepoDep
+from app.api.turnos import (
+    PacienteRepoDep,
+    ProfesionalRepoDep,
+    SillonRepoDep,
+    TurnoRepoDep,
+)
 from app.core.deps import DbDep, SettingsDep, StoreDep
 from app.esquemas.webhook import (
     AdaptadorWebhook,
@@ -109,6 +115,9 @@ async def recibir_evento(
     pacientes: PacienteRepoDep,
     tienda: StoreDep,
     cliente: ClienteDep,
+    espera: EsperaRepoDep,
+    profesionales: ProfesionalRepoDep,
+    sillones: SillonRepoDep,
 ):
     """Procesa un evento firmado de WhatsApp (respuesta o estado)."""
     secreto = settings.whatsapp_webhook_secret
@@ -129,7 +138,8 @@ async def recibir_evento(
     if isinstance(datos, EstadoMensajeIn):
         return await _evento_estado(db, notifs, datos)
     return await _evento_respuesta(
-        db, turnos, notifs, pacientes, tienda, cliente, datos
+        db, turnos, notifs, pacientes, tienda, cliente, datos,
+        espera=espera, profesionales=profesionales, sillones=sillones,
     )
 
 
@@ -146,7 +156,8 @@ async def _evento_estado(db, notifs, datos: EstadoMensajeIn):
 
 
 async def _evento_respuesta(
-    db, turnos, notifs, pacientes, tienda, cliente, datos: RespuestaPacienteIn
+    db, turnos, notifs, pacientes, tienda, cliente, datos: RespuestaPacienteIn,
+    espera, profesionales, sillones,
 ):
     turno = await turnos.get(datos.turno_id)
     if turno is None:
@@ -157,7 +168,10 @@ async def _evento_respuesta(
         return await _responder_si(
             db, turnos, notifs, pacientes, tienda, cliente, turno)
     if texto in NO_VOCABULARIO:
-        return await _responder_no(db, turnos, turno)
+        return await _responder_no(
+            db, turnos, turno, espera, pacientes, profesionales, sillones,
+            notifs, tienda, cliente,
+        )
     _log.warning(
         "webhook respuesta no reconocida turno %s (aviso secretaria)",
         turno.id,
@@ -190,7 +204,11 @@ async def _responder_si(db, turnos, notifs, pacientes, tienda, cliente, turno):
     )
 
 
-async def _responder_no(db, turnos, turno):
+async def _responder_no(
+    db, turnos, turno, espera, pacientes, profesionales, sillones, notifs,
+    tienda, cliente,
+):
+    """NO cancela y dispara oferta a la lista de espera (aditivo C-07)."""
     if turno.estado in ("pendiente", "confirmado"):
         try:
             await agenda.cambiar_estado(
@@ -199,6 +217,13 @@ async def _responder_no(db, turnos, turno):
             await db.rollback()
             raise HTTPException(status_code=422, detail=str(exc)) from None
         await db.commit()
+        # --- Aditivo C-07: oferta tras cancelado por webhook ---------------
+        await ofrecer_tras_cancelacion(
+            db=db, turno=turno, espera_repo=espera, turnos_repo=turnos,
+            profesionales_repo=profesionales, sillones_repo=sillones,
+            pacientes_repo=pacientes, notif_repo=notifs, tienda=tienda,
+            cliente=cliente,
+        )
         return {"detail": "cancelado"}
     return JSONResponse(status_code=200, content={"detail": "sin_cambios"})
 

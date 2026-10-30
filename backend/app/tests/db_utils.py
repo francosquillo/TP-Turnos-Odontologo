@@ -89,7 +89,7 @@ async def reset_estado_base(cfg, dsn: str) -> None:
     seria no-op sobre un esquema vacio y el downgrade fallaria con
     UndefinedTableError. Incluye `turno` (migracion 002, fix verify C-04):
     sin ella, un turno residual + stamp base rompia `upgrade head` con
-    DuplicateTableError. No debilita asserts: solo fija el punto de partida.
+    DuplicateTableError. C-07 suma `espera_entry` (migracion 004) por lo mismo. No debilita asserts: solo fija el punto de partida.
     """
     import asyncio as _asyncio
 
@@ -103,7 +103,7 @@ async def reset_estado_base(cfg, dsn: str) -> None:
         async with reset_engine.begin() as conn:
             await conn.execute(
                 _text(
-                    "DROP TABLE IF EXISTS notificacion, plantilla, turno, sillon,"
+                    "DROP TABLE IF EXISTS espera_entry, notificacion, plantilla, turno, sillon,"
                     " profesional, paciente, usuario, rol CASCADE"
                 )
             )

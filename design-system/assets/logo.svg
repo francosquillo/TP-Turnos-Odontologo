@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="64" viewBox="0 0 260 64" role="img" aria-labelledby="t d">
+  <title id="t">Logo provisional</title>
+  <desc id="d">Logo provisional del producto: una muela estilizada. Reemplazar por el logo definitivo.</desc>
+  <rect x="0.5" y="0.5" width="259" height="63" rx="8" fill="#ffffff" stroke="#b45309" stroke-dasharray="4 3"/>
+  <path d="M20 14c5-4 10-1 12 0 2-1 7-4 12 0 6 5 3 14 1 21-1 6-2 15-5 15-3 0-3-8-8-8s-5 8-8 8c-3 0-4-9-5-15-2-7-5-16 1-21z" fill="#0f766e"/>
+  <text x="62" y="32" font-family="system-ui, 'Segoe UI', Arial, sans-serif" font-size="17" font-weight="700" fill="#0f172a">Turnos Odontólogo</text>
+  <text x="62" y="50" font-family="system-ui, 'Segoe UI', Arial, sans-serif" font-size="11" font-weight="700" letter-spacing="1.5" fill="#92400e">PROVISIONAL</text>
+</svg>

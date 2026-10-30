@@ -1,0 +1,71 @@
+/* Estilos de lista de espera (C-07). Extraídos de design-system/components.html
+ * (Revision 1); solo usan tokens de ./tokens.css. No tocan elementos globales. */
+
+.wrap-espera { max-width: var(--container-max); margin: 0 auto; padding: var(--space-4) var(--gutter); font-family: var(--font-sans); color: var(--color-text); }
+.wrap-espera h1 { font-size: var(--text-xl); line-height: var(--leading-tight); margin: 0 0 var(--space-4); }
+.wrap-espera .muted, .oferta .muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+.row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: var(--target-min); padding: 0 var(--space-4);
+  font: inherit; font-weight: var(--weight-medium); line-height: 1;
+  border: 1px solid transparent; border-radius: var(--radius-md); cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+}
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn-primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+.btn-secondary { background: var(--color-surface); color: var(--color-primary-hover); border-color: var(--color-border-strong); }
+.btn-secondary:hover:not(:disabled) { background: var(--color-primary-soft); }
+.btn-danger { background: var(--color-danger); color: #fff; }
+.btn-danger:hover:not(:disabled) { background: var(--color-danger-hover); }
+.btn-ghost { background: transparent; color: var(--color-text); }
+.btn-ghost:hover:not(:disabled) { background: var(--color-surface-alt); }
+.btn-sm { min-height: 2.25rem; padding: 0 var(--space-3); font-size: var(--text-sm); }
+.btn:disabled { background: var(--color-disabled-bg); color: var(--color-disabled-text); border-color: transparent; cursor: not-allowed; }
+
+.field { display: flex; flex-direction: column; gap: var(--space-1); margin-bottom: var(--space-3); }
+.field label { font-weight: var(--weight-medium); font-size: var(--text-sm); }
+.input {
+  min-height: var(--target-min); padding: 0 var(--space-3); font: inherit; color: var(--color-text);
+  background: var(--color-surface); border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); width: 100%; box-sizing: border-box;
+}
+textarea.input { padding: var(--space-3); min-height: 5rem; }
+.input[aria-invalid="true"] { border-color: var(--color-danger); border-width: 2px; }
+.error-msg { font-size: var(--text-sm); color: var(--color-danger-text); font-weight: var(--weight-medium); }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); }
+
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: var(--weight-medium); background: var(--bg); color: var(--fg); line-height: 1.4; }
+.badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dot); flex: none; }
+.badge[data-espera="activa"] { --bg: var(--espera-activa-bg); --fg: var(--espera-activa-text); --dot: var(--espera-activa); }
+.badge[data-espera="ofrecida"] { --bg: var(--espera-ofrecida-bg); --fg: var(--espera-ofrecida-text); --dot: var(--espera-ofrecida); }
+.badge[data-espera="convertida"] { --bg: var(--espera-convertida-bg); --fg: var(--espera-convertida-text); --dot: var(--espera-convertida); }
+.badge[data-espera="vencida"] { --bg: var(--espera-vencida-bg); --fg: var(--espera-vencida-text); --dot: var(--espera-vencida); }
+
+.cola { list-style: none; margin: 0; padding: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.cola li { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2) var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); align-items: center; }
+.cola li:last-child { border-bottom: 0; }
+.cola .quien { font-weight: var(--weight-medium); }
+.cola .detalle { grid-column: 1 / -1; display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+.cola .espera-form { grid-column: 1 / -1; background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); }
+.countdown { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-weight: var(--weight-bold); color: var(--color-text); }
+.countdown[data-urgente="true"] { color: var(--color-danger-text); }
+.countdown[data-vencido="true"] { color: var(--espera-vencida-text); font-weight: var(--weight-regular); font-family: var(--font-sans); }
+
+.banner { display: flex; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); border: 1px solid; align-items: flex-start; text-align: left; }
+.banner strong { display: block; }
+.banner-error { background: var(--color-danger-soft); color: var(--color-danger-text); border-color: #fca5a5; }
+.banner-success { background: var(--color-success-soft); color: var(--color-success-text); border-color: var(--color-success-border); }
+.banner-warning { background: var(--color-warning-soft); color: var(--color-warning-text); border-color: #fcd34d; }
+.banner-icon { flex: none; font-weight: var(--weight-bold); width: 1.5rem; height: 1.5rem; border-radius: 50%; background: currentColor; display: grid; place-items: center; }
+.banner-icon span { color: #fff; font-size: var(--text-sm); line-height: 1; }
+
+.oferta { max-width: 28rem; margin: var(--space-5) auto; text-align: center; font-family: var(--font-sans); color: var(--color-text); }
+.oferta h1 { font-size: var(--text-lg); line-height: var(--leading-tight); margin: 0 0 var(--space-3); }
+.oferta .tiempo { font-size: var(--text-2xl); margin: var(--space-2) 0; }
+.oferta .row { justify-content: center; }
+@media (max-width: 480px) {
+  .oferta .row .btn { flex: 1 1 100%; }
+  .cola li { grid-template-columns: 1fr; }
+}

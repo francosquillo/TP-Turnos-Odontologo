@@ -46,6 +46,15 @@ PLANTILLAS_V1: dict[str, dict] = {
         # el render la tolera aunque este cuerpo no la use (task 6.2).
         "variables": ["nombre_pila", "fecha", "hora", "consultorio_tel", "expira_en"],
     },
+    "oferta_lista_espera": {
+        "cuerpo": (
+            "Hola {nombre_pila}, se liberó un turno el {fecha} a las {hora}. "
+            "Tenés 2 h para confirmarlo aquí: {link_oferta} (vence {expira_en})."
+        ),
+        # C-07: plantilla de oferta de lista de espera (seed v1, sin migrar;
+        # CHECK de C-06 ya la admite).
+        "variables": ["nombre_pila", "fecha", "hora", "expira_en", "link_oferta"],
+    },
     "resena_google": {
         "cuerpo": (
             "Hola {nombre_pila}, gracias por tu visita. "
