@@ -32,6 +32,14 @@
       "sessions": 1,
       "memories": 7,
       "prompts": 0
+    },
+    {
+      "id": "2cec0c7e",
+      "created_by": "ingra",
+      "created_at": "2026-10-30T19:07:58Z",
+      "sessions": 0,
+      "memories": 28,
+      "prompts": 0
     }
   ]
 }
