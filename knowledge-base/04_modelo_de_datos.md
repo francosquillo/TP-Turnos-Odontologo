@@ -19,7 +19,7 @@ Sillon 1──* Turno (unique parcial anti-solapamiento)
 Paciente 1──1 HistoriaClinica 1──* HallazgoOdontograma (pieza FDI + cara + estado)
 Hallazgo *──* Tratamiento → Presupuesto 1──* ItemPresupuesto
 Paciente 1──1 CuentaCorriente 1──* Movimiento
-Caja 1──1 CierreDiario 1──* MovimientoCaja (+ Recibo)
+Caja 1──* MovimientoCaja *──1 Recibo (el cierre diario son columnas de Caja)
 ObraSocial 1──* Plan 1──* Arancel (nomenclador: código + precio + vigencia)
 Liquidacion 1──* ItemLiquidacion (turno/prestación × arancel)
 Turno 1──* Notificacion · Paciente 1──* EsperaEntry
@@ -67,10 +67,10 @@ Turno 1──* Notificacion · Paciente 1──* EsperaEntry
 - Movimiento: id, cc_id, tipo (cargo|pago|ajuste), monto, concepto, turno_id/presupuesto_id/recibo_id (nullable), created_at.
 - Constraints: monto != 0; anulación vía contramovimiento, nunca UPDATE/DELETE.
 
-### Caja / CierreDiario / Recibo
-- Caja: id, fecha (unique), abierta_por, estado (abierta|cerrada), total_sistema, total_contado, diferencia.
-- MovimientoCaja: id, caja_id, medio (efectivo|transferencia|tarjeta — MP solo futuro), monto, recibo_id.
-- Recibo: id, número (secuencia), paciente_id, monto, medio, anulado (bool + motivo).
+### Caja / Recibo
+- Caja: id, fecha (unique), abierta_por, estado (abierta|cerrada), total_sistema, total_contado, diferencia, motivo_diferencia, cerrada_por, cerrada_at. El cierre diario son estas columnas de Caja, sin entidad propia.
+- MovimientoCaja: id, caja_id, medio (efectivo|transferencia|tarjeta_simulada — MP solo futuro), monto, recibo_id.
+- Recibo: id, número (secuencia), paciente_id, monto, medio, emitido_por, clave_idempotencia (UUID v4, unique), anulado (bool + motivo, anulado_por, anulado_at).
 - Constraints: cierre diario obligatorio; egresos/anulaciones con motivo trazado.
 
 ### ObraSocial / Plan / Arancel / Liquidacion

@@ -16,6 +16,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from c09_helpers import sembrar_c09  # noqa: E402
+from c10_helpers import crear_recibo  # noqa: E402
 from db_utils import sesion_pg  # noqa: E402, F401
 
 
@@ -192,6 +193,11 @@ async def _cuenta(sesion, m):
     return cc
 
 
+async def _recibo_id(sesion, m, tipo):
+    """C-10 (D-15): un `pago` nace con recibo. Para otros tipos no hace falta."""
+    return (await crear_recibo(sesion, m)).id if tipo == "pago" else None
+
+
 def _mov(cc, m, **cambios):
     from app.modelos import Movimiento
 
@@ -243,8 +249,9 @@ async def test_cuenta_sin_columna_saldo(sesion_pg):
 async def test_movimiento_tipo_y_signo_invalidos_rechazados(sesion_pg, tipo, monto):
     m = await sembrar_c09(sesion_pg)
     cc = await _cuenta(sesion_pg, m)
+    recibo_id = await _recibo_id(sesion_pg, m, tipo)
     await sesion_pg.commit()
-    await _rechaza(sesion_pg, _mov(cc, m, tipo=tipo, monto=Decimal(monto)))
+    await _rechaza(sesion_pg, _mov(cc, m, tipo=tipo, monto=Decimal(monto), recibo_id=recibo_id))
 
 
 @pytest.mark.asyncio
@@ -254,7 +261,8 @@ async def test_movimiento_tipo_y_signo_invalidos_rechazados(sesion_pg, tipo, mon
 async def test_movimiento_tipo_y_signo_validos_aceptados(sesion_pg, tipo, monto):
     m = await sembrar_c09(sesion_pg)
     cc = await _cuenta(sesion_pg, m)
-    sesion_pg.add(_mov(cc, m, tipo=tipo, monto=Decimal(monto)))
+    recibo_id = await _recibo_id(sesion_pg, m, tipo)
+    sesion_pg.add(_mov(cc, m, tipo=tipo, monto=Decimal(monto), recibo_id=recibo_id))
     await sesion_pg.flush()
 
 
@@ -274,11 +282,13 @@ async def test_movimiento_cargos_de_presupuestos_distintos_o_sin_presupuesto_ace
     p1 = await _presupuesto_ok(sesion_pg, m)
     p2 = await _presupuesto_ok(sesion_pg, m)
     cc = await _cuenta(sesion_pg, m)
+    recibo = await crear_recibo(sesion_pg, m)
     sesion_pg.add_all([
         _mov(cc, m, presupuesto_id=p1.id), _mov(cc, m, presupuesto_id=p2.id),
         _mov(cc, m), _mov(cc, m),
         # un pago puede citar el mismo presupuesto que su cargo
-        _mov(cc, m, tipo="pago", monto=Decimal("-5.00"), presupuesto_id=p1.id),
+        _mov(cc, m, tipo="pago", monto=Decimal("-5.00"), presupuesto_id=p1.id,
+             recibo_id=recibo.id),
     ])
     await sesion_pg.flush()
 
@@ -316,18 +326,22 @@ async def test_movimiento_anulacion_que_no_es_ajuste_rechazada(sesion_pg):
     sesion_pg.add(cargo)
     await sesion_pg.flush()
     await sesion_pg.commit()
+    recibo = await crear_recibo(sesion_pg, m)
+    await sesion_pg.commit()
     await _rechaza(sesion_pg, _mov(cc, m, tipo="pago", monto=Decimal("-1.00"),
-                                   anula_a_id=cargo.id, motivo="x"))
+                                   anula_a_id=cargo.id, motivo="x", recibo_id=recibo.id))
 
 
 @pytest.mark.asyncio
-async def test_movimiento_recibo_inexistente_aceptado(sesion_pg):
+async def test_movimiento_pago_con_recibo_existente_aceptado(sesion_pg):
+    """C-10 (D-15) reemplaza al contrato transitorio de C-09: el recibo ya existe y se guarda."""
     m = await sembrar_c09(sesion_pg)
     cc = await _cuenta(sesion_pg, m)
-    mov = _mov(cc, m, tipo="pago", monto=Decimal("-50.00"), recibo_id=987654)
+    recibo = await crear_recibo(sesion_pg, m)
+    mov = _mov(cc, m, tipo="pago", monto=Decimal("-50.00"), recibo_id=recibo.id)
     sesion_pg.add(mov)
     await sesion_pg.flush()
-    assert mov.recibo_id == 987654
+    assert mov.recibo_id == recibo.id
 
 
 @pytest.mark.asyncio

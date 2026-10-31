@@ -105,7 +105,7 @@ async def reset_estado_base(cfg, dsn: str) -> None:
     UndefinedTableError. Incluye `turno` (migracion 002, fix verify C-04):
     sin ella, un turno residual + stamp base rompia `upgrade head` con
     DuplicateTableError. C-07 suma `espera_entry` (migracion 004) por lo mismo; C-08 suma las 4 tablas clinicas (migracion 005); C-09 suma las 4 de presupuestos/cuenta
-    corriente (migracion 006) y la funcion del trigger. No debilita asserts: solo fija el punto de partida.
+    corriente (migracion 006) y la funcion del trigger; C-10 suma las 4 de caja/recibos (migracion 007) y sus 4 funciones. No debilita asserts: solo fija el punto de partida.
     """
     import asyncio as _asyncio
 
@@ -119,13 +119,18 @@ async def reset_estado_base(cfg, dsn: str) -> None:
         async with reset_engine.begin() as conn:
             await conn.execute(
                 _text(
-                    "DROP TABLE IF EXISTS movimiento, cuenta_corriente, item_presupuesto, presupuesto,"
+                    "DROP TABLE IF EXISTS movimiento_caja, recibo_contador, recibo, caja,"
+                    " movimiento, cuenta_corriente, item_presupuesto, presupuesto,"
                     " hallazgo_odontograma, historia_clinica, estado_hallazgo_catalogo,"
                     " tratamiento, espera_entry, notificacion, plantilla, turno, sillon,"
                     " profesional, paciente, usuario, rol CASCADE"
                 )
             )
-            await conn.execute(_text("DROP FUNCTION IF EXISTS movimiento_inmutable()"))
+            for _funcion in (
+                "movimiento_inmutable", "movimiento_caja_inmutable",
+                "movimiento_caja_caja_abierta", "caja_proteger", "recibo_proteger",
+            ):
+                await conn.execute(_text(f"DROP FUNCTION IF EXISTS {_funcion}()"))
         await _asyncio.to_thread(_command.stamp, cfg, "base")
     finally:
         await reset_engine.dispose()

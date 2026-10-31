@@ -36,6 +36,12 @@ class PresupuestoRepository(BaseRepository[Presupuesto]):
             )
         )
 
+    async def estado_de(self, presupuesto_id: int) -> str:
+        """Estado actual leído de la DB (sin depender del identity map)."""
+        return await self.sesion.scalar(
+            select(Presupuesto.estado).where(Presupuesto.id == presupuesto_id)
+        )
+
     async def get_para_actualizar(self, presupuesto_id: int) -> Presupuesto | None:
         """Fila activa bloqueada (`FOR UPDATE`) y refrescada desde la DB."""
         return await self.sesion.scalar(

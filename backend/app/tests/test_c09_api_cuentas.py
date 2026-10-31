@@ -45,7 +45,7 @@ async def test_get_cuenta_200_vacia_y_con_cargo(sesion_pg):
         p, cargo = await _con_cargo(cli, hdr, ids)
         con = await cli.get(f"/cuentas/{ids['ana']}", headers=hdr["admin"])
     assert vacia.status_code == 200 and vacia.json() == {
-        "paciente_id": ids["ana"], "saldo": "0.00", "movimientos": []}
+        "paciente_id": ids["ana"], "saldo": "0.00", "movimientos": [], "pendientes": []}
     assert con.status_code == 200 and con.json()["saldo"] == "2001.00"
     assert (cargo["tipo"], cargo["monto"], cargo["presupuesto_id"]) == ("cargo", "2001.00", p["id"])
     assert cargo["anulado"] is False and cargo["anula_a_id"] is None

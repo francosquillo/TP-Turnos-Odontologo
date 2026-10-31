@@ -146,9 +146,16 @@ def test_no_existe_ruta_de_cobro():
     assert propias, "el control no es vacuo: debe haber rutas de C-09"
     for path, metodos in propias:
         assert not any(palabra in path.lower() for palabra in _PALABRAS_DE_COBRO), path
-    # En todo el árbol, la única ruta de cobros es el stub de C-01: solo GET.
-    cobros = [(p, mt) for p, mt in rutas if "cobr" in p.lower() or "recibo" in p.lower() or "pago" in p.lower()]
-    assert cobros == [("/cobros", ["GET"])], cobros
+    # En todo el árbol, las rutas de cobro viven solo bajo /caja y /recibos (C-10, D-22),
+    # además del stub de C-01 (/cobros, solo GET). Ninguna cuelga de /cuentas ni /presupuestos.
+    cobros = sorted(
+        (p, mt) for p, mt in rutas
+        if "cobr" in p.lower() or "recibo" in p.lower() or "pago" in p.lower()
+    )
+    assert cobros == [
+        ("/caja/cobrar", ["POST"]), ("/cobros", ["GET"]), ("/recibos", ["GET"]),
+        ("/recibos/{recibo_id}/anular", ["POST"]),
+    ], cobros
     # Ninguna ruta de cuentas permite crear movimientos: la única escritura es `anular`.
     escrituras = {p for p, mt in propias if p.startswith("/cuentas") and set(mt) - {"GET", "HEAD"}}
     assert escrituras == {"/cuentas/{paciente_id}/movimientos/{movimiento_id}/anular"}

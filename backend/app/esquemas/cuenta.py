@@ -5,6 +5,8 @@ esquema de alta de movimientos: la única escritura por API es la anulación.
 """
 from datetime import datetime
 
+from pydantic import Field
+
 from app.esquemas.base import BaseSchema, Dinero
 from app.esquemas.clinica import Motivo
 
@@ -28,10 +30,19 @@ class MovimientoOut(BaseSchema):
     anulado: bool
 
 
+class PendienteOut(BaseSchema):
+    """Presupuesto aceptado con importe por cobrar, derivado de los movimientos (C-10, D-17)."""
+
+    presupuesto_id: int
+    total: Dinero
+    pendiente: Dinero
+
+
 class CuentaOut(BaseSchema):
     paciente_id: int
     saldo: Dinero
     movimientos: list[MovimientoOut]
+    pendientes: list[PendienteOut] = Field(default_factory=list)
 
 
-__all__ = ["AnulacionIn", "CuentaOut", "MovimientoOut"]
+__all__ = ["AnulacionIn", "CuentaOut", "MovimientoOut", "PendienteOut"]

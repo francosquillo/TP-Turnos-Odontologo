@@ -16,7 +16,7 @@ from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 
-from app.esquemas.cuenta import CuentaOut, MovimientoOut
+from app.esquemas.cuenta import CuentaOut, MovimientoOut, PendienteOut
 from app.modelos import Movimiento
 from app.servicios.clinica_servicio import (  # noqa: F401  (reexportados al router y a los tests)
     AccesoDenegadoError, Actor, ClinicaError, ConflictoError, NoEncontradoError,
@@ -47,10 +47,15 @@ async def obtener_cuenta(repos: PresupuestoRepos, actor: Actor, paciente_id: int
             raise NoEncontradoError("paciente inexistente")
         return CuentaOut(paciente_id=paciente_id, saldo=0, movimientos=[])
     movimientos = await repos.cuentas.movimientos(cuenta.id)
+    pendientes = await repos.cuentas.pendientes_de_paciente(paciente_id)
     return CuentaOut(
         paciente_id=paciente_id,
         saldo=await repos.cuentas.saldo(cuenta.id),
         movimientos=[_a_movimiento_out(f.movimiento, f.anulado) for f in movimientos],
+        pendientes=[
+            PendienteOut(presupuesto_id=f.presupuesto_id, total=f.total, pendiente=f.pendiente)
+            for f in pendientes
+        ],
     )
 
 

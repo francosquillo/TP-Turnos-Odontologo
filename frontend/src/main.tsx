@@ -6,6 +6,7 @@ import "./styles/lista-espera.css";
 import "./styles/odontograma.css";
 import "./styles/presupuestos.css";
 import "./styles/cuenta-corriente.css";
+import "./styles/caja.css";
 
 const raiz = document.getElementById("root");
 if (raiz === null) throw new Error("Falta #root en index.html");

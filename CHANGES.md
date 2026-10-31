@@ -269,7 +269,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/07_flujos_principales.md` §Flujo 3
 
 ### [C-10] `caja-cobros-simulados`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 47/47 (2026-10-31) → `openspec/changes/archive/2026-10-31-c-10-caja-cobros-simulados/` — Verificado mode full 2026-10-31: backend 1123/1123, vitest 317/317, migración head `007_caja_recibos`. Specs principales creadas: `openspec/specs/caja/spec.md` (14 requirements) y `openspec/specs/recibos/spec.md` (8 requirements). Verify captures (17) archivadas con el change.
 - **Scope**:
   - Modelos: `Caja (fecha unique, abierta_por, estado abierta|cerrada, total_sistema, total_contado, diferencia)`, `MovimientoCaja (caja_id, medio efectivo|transferencia|tarjeta_simulada, monto, recibo_id)`, `Recibo (número secuencia sin huecos, paciente_id, monto, medio, anulado+motivo)`
   - Medios **simulados** (sin integración MP real); cierre diario obligatorio bloquea operar día siguiente (RN-CO-01); diferencia ≠ 0 exige declararla; anular → contramovimiento + motivo (RN-CO-02); recibo secuencial sin huecos (RN-CO-04)
@@ -284,7 +284,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - El bloqueo de RN-CO-01 no alcanza a C-09 (aceptar no mueve caja); C-10 confirma ese límite.
 - **Governance**: CRITICO
 - **Leer antes**:
-  - `knowledge-base/04_modelo_de_datos.md` §Caja/CierreDiario/Recibo
+  - `knowledge-base/04_modelo_de_datos.md` §Caja/Recibo
   - `knowledge-base/05_reglas_de_negocio.md` §RN-CO-01..04
   - `knowledge-base/06_funcionalidades.md` §US-031
   - `knowledge-base/07_flujos_principales.md` §Flujo 4
@@ -298,6 +298,15 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - Export CSV + PDF presentable (vía worker Redis si pesado)
   - Tests: vigencia arancel, agrupado OS/plan/período, export CSV/PDF, validador
 - **Dependencias**: `C-04, C-09`
+- **Contrato recibido de C-10 (design.md D-20)**: C-10 deja `movimiento_caja.recibo_id` como `NOT NULL`, porque en v1.0 cada movimiento de caja nace de un recibo. El Flujo 5 registra el cobro de una liquidación "en caja como ingreso" y sin recibo de paciente, así que C-11 hace esa migración: no se usa `POST /caja/cobrar`, que exige presupuesto y emite recibo.
+  - **Migrar `movimiento_caja`**, encadenado sobre `007_caja_recibos`: `recibo_id` pasa a nulable, se suma `liquidacion_id` con FK RESTRICT e índice, y un CHECK exige exactamente una de las dos referencias. Quitar `NOT NULL` no choca con los triggers de fila.
+  - **Reproducir las garantías por liquidación**: `uq_movcaja_ingreso` y `uq_movcaja_reversion` son por recibo y no cubren filas con `recibo_id` nulo. C-11 suma índices únicos parciales equivalentes por `liquidacion_id`: un ingreso y como máximo una reversión. `medio` sigue siendo obligatorio y del catálogo cerrado.
+  - **Mismo control de caja**: el ingreso pasa por el `_caja_operable` de `caja_servicio`, sin copiarlo: una caja pendiente o la de hoy cerrada responden `409`. Usa `hoy_operativo()`, asegura la caja de hoy (apertura implícita, `abierta_por` igual al autor) y respeta el orden de locks: primero la caja, después la liquidación.
+  - **Una liquidación se cobra una sola vez**: el paso a `cobrada` y el ingreso van en la misma transacción. Con la liquidación bloqueada, si ya está `cobrada` responde `409`. Ese estado cumple el papel de la clave de idempotencia de D-25 de C-10, si se aprueba, que queda solo para `recibo`.
+  - **Cierre y pantallas**: `total_sistema` y `desglose` suman todo `movimiento_caja`, así que el ingreso ya cuenta. `GET /recibos` lista recibos y no lo muestra: C-11 debe mostrarlo en Caja, para que el cierre se pueda explicar. Una caja cerrada nunca se toca; revertir un ingreso cae en la caja de hoy y exige motivo, como D-13 de C-10.
+  - **Cobertura**: el cargo se genera por el total, sin descontar cobertura de OS, y `movimiento` es inmutable. La cobertura se aplica con un `ajuste` negativo con `presupuesto_id` y sin `anula_a_id`, que reduce el pendiente. Si lo deja en 0, C-11 aplica `aceptado → cobrado` reutilizando la función de `caja_servicio`. El `ajuste` no mueve caja, por lo que no lo bloquea RN-CO-01.
+  - **Aviso**: la matriz de `03` da Liquidaciones a admin, y Caja a admin solo para ver y anular (D-16 de C-10). Flujo 5 tiene como actor a admin: C-11 debe dejar explícito que registrar el ingreso es parte de la liquidación y no habilita cobrar por `/caja`.
+  - **Aviso**: `Dependencias` no lista C-10, y GATE 6 permite arrancar ambos en paralelo. Esta migración requiere C-10 archivado. Si C-11 arranca antes, deja el ingreso a caja para el final.
 - **Governance**: MEDIO
 - **Leer antes**:
   - `knowledge-base/04_modelo_de_datos.md` §ObraSocial/Plan/Arancel/Liquidacion
@@ -322,6 +331,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - Seed demo completo + compose local verificado E2E (landing → reserva → confirmar → agenda → odontograma → presupuesto → cobrar → cierre → liquidación)
   - Tests: import con filas malas, export total, página seguridad pública, resguardo admin vía UI
 - **Dependencias**: `C-02, C-03` (base); E2E final requiere `C-05, C-10` verdes
+- **Nota C-10**: si el seed demo genera recibos, debe generar `clave_idempotencia` (D-25), porque la columna es `NOT NULL`.
 - **Governance**: ALTO
 - **Leer antes**:
   - `knowledge-base/03_actores_y_roles.md` §RBAC, §Rutas públicas

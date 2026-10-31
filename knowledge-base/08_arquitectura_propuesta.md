@@ -10,7 +10,7 @@
 | Token público un solo uso | Confirmación paciente | Paciente sin cuenta, seguro y simple |
 | Soft-delete + contramovimientos | Clínica, cobros | Trazabilidad legal/contable |
  | RBAC por rol | Toda la API | 3 roles + público (ver `03`; Dueño = alias de Admin) |
-| Cron liviano | Disparo de recordatorios, cierres | Un scheduler en el worker |
+| Cron liviano | Disparo de recordatorios. El cierre de caja NO es automático: exige el conteo de una persona (C-10 D-12) | Un scheduler en el worker |
 
 ## Estructura de directorios
 

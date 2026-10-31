@@ -13,8 +13,15 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
-from app.modelos import CuentaCorriente, Movimiento
+from app.modelos import CuentaCorriente, Movimiento, Presupuesto
 from app.repos.base import BaseRepository
+
+
+@dataclass(frozen=True)
+class PendienteFila:
+    presupuesto_id: int
+    total: Decimal
+    pendiente: Decimal
 
 
 @dataclass(frozen=True)
@@ -91,6 +98,37 @@ class CuentaRepository(BaseRepository[CuentaCorriente]):
             )
         )
         return set(filas.scalars().all())
+
+    async def pendiente_de_presupuesto(self, presupuesto_id: int) -> Decimal:
+        """Pendiente derivado (C-10, D-08): suma de los movimientos del presupuesto."""
+        return await self.sesion.scalar(
+            select(func.coalesce(func.sum(Movimiento.monto), 0)).where(
+                Movimiento.presupuesto_id == presupuesto_id
+            )
+        )
+
+    async def pendientes_de_paciente(self, paciente_id: int) -> list[PendienteFila]:
+        """Presupuestos `aceptado` del paciente con pendiente mayor a cero (D-17)."""
+        pendiente = func.coalesce(func.sum(Movimiento.monto), 0)
+        filas = await self.sesion.execute(
+            select(Presupuesto.id, Presupuesto.total, pendiente)
+            .join(Movimiento, Movimiento.presupuesto_id == Presupuesto.id)
+            .where(
+                Presupuesto.paciente_id == paciente_id,
+                Presupuesto.estado == "aceptado",
+                Presupuesto.deleted_at.is_(None),
+            )
+            .group_by(Presupuesto.id, Presupuesto.total)
+            .having(pendiente > 0)
+            .order_by(Presupuesto.id)
+        )
+        return [PendienteFila(pid, total, pend) for pid, total, pend in filas.all()]
+
+    async def pago_de_recibo(self, recibo_id: int) -> Movimiento | None:
+        """El único `pago` del recibo (`uq_movimiento_pago_recibo`)."""
+        return await self.sesion.scalar(
+            select(Movimiento).where(Movimiento.recibo_id == recibo_id, Movimiento.tipo == "pago")
+        )
 
     async def tiene_anulacion(self, movimiento_id: int) -> bool:
         """True si ya existe un contramovimiento de ese movimiento."""

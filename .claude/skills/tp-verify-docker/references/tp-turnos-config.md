@@ -18,7 +18,7 @@ Python 3.12 + FastAPI 0.110+ + SQLAlchemy 2 async + Postgres 16 + Redis 7 + Reac
 
 ## Migrations
 
-- Alembic heads: revisar con `alembic heads`; cadena actual `001_core_identidad_pacientes → 002_turno → 003_notificacion → 004_espera → 005_clinica → 006_presupuestos_cc`; actualizar esta línea al crear cada migración.
+- Alembic heads: revisar con `alembic heads`; cadena actual `001_core_identidad_pacientes → 002_turno → 003_notificacion → 004_espera → 005_clinica → 006_presupuestos_cc → 007_caja_recibos`; actualizar esta línea al crear cada migración.
 - `btree_gist` extension required for `EXCLUDE USING gist` (overlap profesional/sillón). Verify checks `CREATE EXTENSION IF NOT EXISTS btree_gist`.
 - Known false ROJO: downgrade test assuming old head — update the test, not the DB.
 

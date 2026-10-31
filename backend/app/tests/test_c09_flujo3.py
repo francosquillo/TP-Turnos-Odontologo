@@ -102,7 +102,7 @@ async def test_flujo3_variante_rechazo_sin_movimientos(sesion_pg):
         rech = await cli.post(f"/presupuestos/{p['id']}/rechazar", json={"motivo": "Prefiere esperar"}, headers=hdr["odo"])
         assert rech.status_code == 200 and rech.json()["estado"] == "rechazado"
         cuenta = (await cli.get(f"/cuentas/{ana_id}", headers=hdr["sec"])).json()
-        assert cuenta == {"paciente_id": ana_id, "saldo": "0.00", "movimientos": []}
+        assert cuenta == {"paciente_id": ana_id, "saldo": "0.00", "movimientos": [], "pendientes": []}
         # el historial lo conserva para recupero (US-022)
         historial = (await cli.get(f"/presupuestos?paciente_id={ana_id}&estado=rechazado", headers=hdr["odo"])).json()
         assert [x["id"] for x in historial] == [p["id"]]

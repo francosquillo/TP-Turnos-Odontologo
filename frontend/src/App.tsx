@@ -11,7 +11,7 @@ import { OfertaEspera } from "./pages/OfertaEspera";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "cuenta" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "cuenta" | "caja" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -46,6 +46,11 @@ const CuentaPage = lazy(() =>
   import("./features/cuenta-corriente/CuentaPage").then((m) => ({ default: m.CuentaPage })),
 );
 
+// C-10: la caja y los recibos tambien se cargan bajo demanda.
+const CajaPage = lazy(() =>
+  import("./features/caja/CajaPage").then((m) => ({ default: m.CajaPage })),
+);
+
 interface PacienteAbierto {
   id: number;
   nombre: string;
@@ -76,6 +81,16 @@ function CuentaRuta({ paciente, alVolver }: { paciente: PacienteAbierto; alVolve
   return (
     <Suspense fallback={<p>Cargando cuenta corriente…</p>}>
       <CuentaPage pacienteId={paciente.id} pacienteNombre={paciente.nombre} rol={rol} alVolver={alVolver} />
+    </Suspense>
+  );
+}
+
+function CajaRuta(): JSX.Element {
+  const { sesion } = useAuth();
+  const rol = sesion?.rol === "admin" ? "admin" : "secretaria";
+  return (
+    <Suspense fallback={<p>Cargando caja…</p>}>
+      <CajaPage rol={rol} />
     </Suspense>
   );
 }
@@ -126,6 +141,9 @@ export function App(): JSX.Element {
         </button>
         <button type="button" onClick={(): void => setPagina("agenda")}>
           Agenda
+        </button>
+        <button type="button" onClick={(): void => setPagina("caja")}>
+          Caja
         </button>
         <button type="button" onClick={(): void => setPagina("espera")}>
           Lista de espera
@@ -184,6 +202,11 @@ export function App(): JSX.Element {
         {pagina === "cuenta" && paciente !== null && (
           <RequireRole roles={["secretaria", "admin"]} alternativa={<Login />}>
             <CuentaRuta paciente={paciente} alVolver={(): void => setPagina("agenda")} />
+          </RequireRole>
+        )}
+        {pagina === "caja" && (
+          <RequireRole roles={["secretaria", "admin"]} alternativa={<Login />}>
+            <CajaRuta />
           </RequireRole>
         )}
         {pagina === "espera" && (

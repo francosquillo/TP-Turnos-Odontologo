@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api import admin, agenda, auth, clinica, cobros, disponibilidad
-from app.api import cuentas, historias, lista_espera, odontograma, presupuestos, tratamientos
+from app.api import caja, cuentas, historias, lista_espera, odontograma, presupuestos, recibos, tratamientos
 from app.api import notificaciones
 from app.api import obras_sociales as os_api
 from app.api import pacientes, profesionales, reservas, sillones, turnos
@@ -93,6 +93,8 @@ def create_app() -> FastAPI:
         tratamientos.router,
         presupuestos.router,
         cuentas.router,
+        caja.router,
+        recibos.router,
         webhooks.router,
         admin.router,
     ):

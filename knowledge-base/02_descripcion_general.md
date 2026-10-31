@@ -11,7 +11,7 @@
 | Cola / async | Redis (jobs: recordatorios, notificaciones) | 7 |
 | Frontend | React + TypeScript + Vite | React 18, TS 5, Vite 5 |
 | Contenedores | Docker + Docker Compose | — |
-| Utilidades | Excel/CSV (import/export), PDF (recibos, liquidaciones) | — |
+| Utilidades | Excel/CSV (import/export), PDF (liquidaciones; el recibo se muestra en pantalla en v1.0, sin PDF: C-10 D-19) | — |
 
 Stack impuesto por la facultad — no negociable para el TP.
 

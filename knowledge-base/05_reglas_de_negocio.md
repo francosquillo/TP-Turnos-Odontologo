@@ -20,8 +20,8 @@ Código `RN-{DOMINIO}-{NN}` para trazabilidad. Origen: `discovery/discovery.md` 
 
 ## Dominio: Cobros (RN-CO)
 
-- **RN-CO-01**: El cierre de caja diario es obligatorio antes de operar el día siguiente.
-- **RN-CO-02**: Egresos y anulaciones exigen motivo y quedan trazados; las anulaciones generan contramovimiento.
+- **RN-CO-01**: El cierre de caja diario es obligatorio antes de operar el día siguiente. "Operar" significa mover caja: una caja sin cerrar de un día anterior bloquea solo cobrar y anular recibos, no agenda, clínica, presupuestos ni la anulación de cargos (C-10, D-06).
+- **RN-CO-02**: Egresos y anulaciones exigen motivo y quedan trazados; las anulaciones generan contramovimiento. Los egresos de caja quedan fuera de alcance en v1.0 (C-10, D-18).
 - **RN-CO-03**: El saldo de cuenta corriente es derivado de movimientos; nunca se edita directo.
 - **RN-CO-04**: Recibos con numeración secuencial sin huecos; anulado conserva número + motivo.
 

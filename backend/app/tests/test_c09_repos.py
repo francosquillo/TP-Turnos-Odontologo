@@ -14,6 +14,7 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
 from c09_helpers import sembrar_c09  # noqa: E402
+from c10_helpers import crear_recibo  # noqa: E402
 from db_utils import sesion_pg  # noqa: E402, F401
 
 T0 = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
@@ -147,6 +148,9 @@ async def _mov(sesion, m, cc, tipo="cargo", monto="100.00", **cambios):
     datos = {"tipo": tipo, "monto": Decimal(monto), "concepto": "Presupuesto 1",
              "creado_por": m.admin.id}
     datos.update(cambios)
+    if tipo == "pago" and "recibo_id" not in datos:
+        # C-10 (D-15): un pago nace con recibo.
+        datos["recibo_id"] = (await crear_recibo(sesion, m, monto=abs(Decimal(monto)))).id
     return await CuentaRepository(sesion).crear_movimiento(cc.id, **datos)
 
 

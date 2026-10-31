@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
 import { ApiError } from "../../shared/api-client";
 import { estadoDeSaldo, formatearMoneda } from "../../shared/moneda";
+import { anularRecibo, consultarCaja } from "../caja/api";
+import { CobroModal } from "../caja/CobroModal";
+import type { EstadoCaja } from "../caja/tipos";
 import { formatoFecha } from "../odontograma/tipos";
 import { obtenerPresupuesto } from "../presupuestos/api";
 import { PresupuestoDetalle } from "../presupuestos/PresupuestoDetalle";
 import type { Presupuesto } from "../presupuestos/tipos";
 import { anularMovimiento, consultarCuenta } from "./api";
 import { AnularModal } from "./AnularModal";
+import { AnularReciboModal } from "./AnularReciboModal";
 import { ETIQUETA_TIPO } from "./tipos";
-import type { Cuenta, Movimiento } from "./tipos";
+import type { Cuenta, Movimiento, Pendiente } from "./tipos";
 
 interface Props {
   pacienteId: number;
@@ -18,7 +22,34 @@ interface Props {
   alVolver: () => void;
 }
 
-type Carga = { tipo: "cargando" } | { tipo: "error"; mensaje: string } | { tipo: "lista"; cuenta: Cuenta };
+type Carga =
+  | { tipo: "cargando" }
+  | { tipo: "error"; mensaje: string }
+  | { tipo: "lista"; cuenta: Cuenta; caja: EstadoCaja | null };
+
+/** Lee cuenta y, para la secretaria, el estado de la caja a la vez (Promise.all). Si falla la
+ * caja, la cuenta se muestra igual y el servidor decide el cobro (`null` = desconocido). */
+async function leer(
+  pacienteId: number,
+  rol: "secretaria" | "admin",
+): Promise<{ cuenta: Cuenta; caja: EstadoCaja | null }> {
+  const [cuenta, caja] = await Promise.all([
+    consultarCuenta(pacienteId),
+    rol === "secretaria" ? consultarCaja().catch((): null => null) : Promise.resolve(null),
+  ]);
+  return { cuenta, caja };
+}
+
+/** El concepto de un pago es fijo ("Recibo 12"): de ahi sale el numero que ve el paciente. */
+function numeroDeRecibo(m: Movimiento): string {
+  const partes = /^Recibo (\d+)$/.exec(m.concepto);
+  return partes?.[1] ?? String(m.recibo_id ?? m.id);
+}
+
+const TEXTO_BLOQUEO: Record<"caja_pendiente" | "caja_cerrada", string> = {
+  caja_pendiente: "Hay que cerrar la caja anterior antes de cobrar.",
+  caja_cerrada: "La caja de hoy ya está cerrada: el cobro se hace mañana.",
+};
 
 function mensajeDe(error: unknown): string {
   return error instanceof ApiError ? error.message : "No se pudo cargar la cuenta corriente";
@@ -49,6 +80,8 @@ function ResumenSaldo({ saldo }: { saldo: string }): JSX.Element {
 export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props): JSX.Element {
   const [carga, setCarga] = useState<Carga>({ tipo: "cargando" });
   const [aAnular, setAAnular] = useState<Movimiento | null>(null);
+  const [aCobrar, setACobrar] = useState<Pendiente | null>(null);
+  const [reciboAAnular, setReciboAAnular] = useState<Movimiento | null>(null);
   const [presupuesto, setPresupuesto] = useState<Presupuesto | null>(null);
   const [avisoPresupuesto, setAvisoPresupuesto] = useState<string | null>(null);
 
@@ -56,10 +89,12 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
     let vigente = true;
     setCarga({ tipo: "cargando" });
     setAAnular(null);
+    setACobrar(null);
+    setReciboAAnular(null);
     setPresupuesto(null);
-    consultarCuenta(pacienteId)
-      .then((cuenta) => {
-        if (vigente) setCarga({ tipo: "lista", cuenta });
+    leer(pacienteId, rol)
+      .then(({ cuenta, caja }) => {
+        if (vigente) setCarga({ tipo: "lista", cuenta, caja });
       })
       .catch((fallo: unknown) => {
         if (vigente) setCarga({ tipo: "error", mensaje: mensajeDe(fallo) });
@@ -67,7 +102,7 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
     return (): void => {
       vigente = false;
     };
-  }, [pacienteId]);
+  }, [pacienteId, rol]);
 
   const encabezado = (
     <div className="cuenta-cabecera">
@@ -98,14 +133,33 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
     );
   }
 
-  const { cuenta } = carga;
+  const { cuenta, caja } = carga;
+
+  /** Saldo, pendientes y marcas de anulado los deriva el servidor: se vuelve a leer todo. */
+  async function refrescar(): Promise<void> {
+    try {
+      const { cuenta: nueva, caja: cajaNueva } = await leer(pacienteId, rol);
+      setCarga({ tipo: "lista", cuenta: nueva, caja: cajaNueva });
+    } catch (fallo) {
+      setCarga({ tipo: "error", mensaje: mensajeDe(fallo) });
+    }
+  }
 
   async function anular(movimiento: Movimiento, motivo: string): Promise<void> {
     await anularMovimiento(pacienteId, movimiento.id, motivo);
-    // El saldo y las marcas de anulado los deriva el servidor: se vuelve a consultar.
-    setCarga({ tipo: "lista", cuenta: await consultarCuenta(pacienteId) });
+    await refrescar();
     setAAnular(null);
   }
+
+  async function anularUnRecibo(movimiento: Movimiento, motivo: string): Promise<void> {
+    if (movimiento.recibo_id === null) return;
+    await anularRecibo(movimiento.recibo_id, motivo);
+    await refrescar();
+    setReciboAAnular(null);
+  }
+
+  const cajaBloqueada = caja !== null && !caja.operable;
+  const textoBloqueo = caja !== null && caja.bloqueo !== null ? TEXTO_BLOQUEO[caja.bloqueo] : null;
 
   async function abrirPresupuesto(id: number): Promise<void> {
     setAvisoPresupuesto(null);
@@ -120,6 +174,54 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
     <section className="cuenta" aria-label="Cuenta corriente">
       {encabezado}
       <ResumenSaldo saldo={cuenta.saldo} />
+
+      {cuenta.pendientes.length > 0 && (
+        <>
+          <h3>Pendientes de cobro</h3>
+          {rol === "secretaria" && cajaBloqueada && textoBloqueo !== null && (
+            <p role="status" className="cuenta-bloqueo">
+              {textoBloqueo}
+            </p>
+          )}
+          <ul className="cuenta-pendientes" aria-label="Pendientes de cobro">
+            {cuenta.pendientes.map((p) => (
+              <li key={p.presupuesto_id}>
+                <span className="titulo">Presupuesto {p.presupuesto_id}</span>
+                <span className="muted">Total: {formatearMoneda(p.total)}</span>
+                <span className="pres-importe">Pendiente: {formatearMoneda(p.pendiente)}</span>
+                {rol === "secretaria" && (
+                  <span className="cuenta-acciones">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      aria-label={`Cobrar presupuesto ${p.presupuesto_id}`}
+                      disabled={cajaBloqueada}
+                      onClick={(): void => setACobrar(p)}
+                    >
+                      Cobrar
+                    </button>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {aCobrar !== null && (
+        <CobroModal
+          key={aCobrar.presupuesto_id}
+          presupuestoId={aCobrar.presupuesto_id}
+          pendiente={aCobrar.pendiente}
+          alCobrado={(): void => {
+            void refrescar();
+          }}
+          alCerrar={(refrescarCuenta): void => {
+            setACobrar(null);
+            if (refrescarCuenta) void refrescar();
+          }}
+        />
+      )}
 
       {cuenta.movimientos.length === 0 ? (
         <p className="muted">El paciente no tiene movimientos.</p>
@@ -146,6 +248,16 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
                     }}
                   >
                     Ver presupuesto
+                  </button>
+                )}
+                {rol === "admin" && m.tipo === "pago" && !m.anulado && m.recibo_id !== null && (
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    aria-label={`Anular recibo ${numeroDeRecibo(m)}`}
+                    onClick={(): void => setReciboAAnular(m)}
+                  >
+                    Anular recibo
                   </button>
                 )}
                 {rol === "admin" && m.tipo === "cargo" && !m.anulado && (
@@ -177,6 +289,15 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
             </button>
           </div>
         </PresupuestoDetalle>
+      )}
+
+      {reciboAAnular !== null && (
+        <AnularReciboModal
+          numero={numeroDeRecibo(reciboAAnular)}
+          monto={reciboAAnular.monto}
+          alCerrar={(): void => setReciboAAnular(null)}
+          alConfirmar={(motivo): Promise<void> => anularUnRecibo(reciboAAnular, motivo)}
+        />
       )}
 
       {aAnular !== null && (

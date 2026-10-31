@@ -5,7 +5,8 @@ trigger (UPDATE/DELETE por fila lanzan excepción); `TRUNCATE` y `DROP` no lo
 disparan, así que las fixtures siguen funcionando. Los tests usan `create_all`,
 por eso el DDL del trigger se adjunta desde el modelo (`after_create`); la
 migración 006 repite los mismos literales y un test compara ambos.
-`recibo_id` es BIGINT sin FK: la tabla `recibo` la crea C-10, que agrega la FK.
+`recibo_id` referencia `recibo` (C-10, D-15): un `pago` nace siempre con recibo, y cada
+recibo tiene un solo `pago`. Un `ajuste` de anulación también puede citar el recibo.
 """
 from datetime import datetime
 from decimal import Decimal
@@ -67,12 +68,25 @@ class Movimiento(Base):
         sa.ForeignKeyConstraint(["cc_id"], ["cuenta_corriente.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["turno_id"], ["turno.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["presupuesto_id"], ["presupuesto.id"], ondelete="RESTRICT"),
+        sa.CheckConstraint(
+            "tipo <> 'pago' OR recibo_id IS NOT NULL", name="ck_movimiento_pago_con_recibo"
+        ),
         sa.ForeignKeyConstraint(["anula_a_id"], ["movimiento.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(
+            ["recibo_id"], ["recibo.id"], ondelete="RESTRICT", name="fk_movimiento_recibo"
+        ),
         sa.ForeignKeyConstraint(["creado_por"], ["usuario.id"], ondelete="RESTRICT"),
         sa.Index("ix_movimiento_cc_created", "cc_id", "created_at"),
         sa.Index("ix_movimiento_turno_id", "turno_id"),
         sa.Index("ix_movimiento_presupuesto_id", "presupuesto_id"),
         sa.Index("ix_movimiento_creado_por", "creado_por"),
+        sa.Index("ix_movimiento_recibo_id", "recibo_id"),
+        sa.Index(
+            "uq_movimiento_pago_recibo",
+            "recibo_id",
+            unique=True,
+            postgresql_where=sa.text("tipo = 'pago'"),
+        ),
         sa.Index(
             "uq_movimiento_cargo_presupuesto",
             "presupuesto_id",

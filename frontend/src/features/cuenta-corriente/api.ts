@@ -13,7 +13,7 @@ import {
   type FetchAutenticado,
 } from "../../shared/api-json";
 import { esTipoMovimiento } from "./tipos";
-import type { Cuenta, Movimiento } from "./tipos";
+import type { Cuenta, Movimiento, Pendiente } from "./tipos";
 
 const esImporte = (valor: unknown): valor is string =>
   typeof valor === "string" && /^-?\d+(\.\d+)?$/.test(valor);
@@ -39,14 +39,26 @@ function esMovimiento(valor: unknown): valor is Movimiento {
   );
 }
 
-function esCuenta(valor: unknown): valor is Cuenta {
+function esPendiente(valor: unknown): valor is Pendiente {
+  return (
+    esObjeto(valor) &&
+    typeof valor["presupuesto_id"] === "number" &&
+    esImporte(valor["total"]) &&
+    esImporte(valor["pendiente"])
+  );
+}
+
+/** `pendientes` es opcional en la entrada (C-10, D-17): su ausencia equivale a una lista vacia. */
+function esCuentaCruda(valor: unknown): valor is Omit<Cuenta, "pendientes"> & { pendientes?: Pendiente[] } {
   if (!esObjeto(valor)) return false;
   const movimientos = valor["movimientos"];
+  const pendientes = valor["pendientes"];
   return (
     typeof valor["paciente_id"] === "number" &&
     esImporte(valor["saldo"]) &&
     Array.isArray(movimientos) &&
-    movimientos.every(esMovimiento)
+    movimientos.every(esMovimiento) &&
+    (pendientes === undefined || (Array.isArray(pendientes) && pendientes.every(esPendiente)))
   );
 }
 
@@ -56,8 +68,8 @@ export async function consultarCuenta(
   fetchFn: FetchAutenticado = fetchConAuth,
 ): Promise<Cuenta> {
   const { respuesta, datos } = await pedir(`/cuentas/${pacienteId}`, fetchFn);
-  if (!esCuenta(datos)) throw inesperada(respuesta, "cuenta corriente");
-  return datos;
+  if (!esCuentaCruda(datos)) throw inesperada(respuesta, "cuenta corriente");
+  return { ...datos, pendientes: datos.pendientes ?? [] };
 }
 
 /** Anula un cargo: el servidor crea un contramovimiento y devuelve esa fila. */

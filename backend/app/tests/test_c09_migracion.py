@@ -29,17 +29,23 @@ def test_c09_cabeza_unica_006_sobre_005():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory(str(ALEMBIC_DIR))
-    assert script.get_heads() == ["006_presupuestos_cc"]
+    # La cabeza avanzó con C-10 (007); 006 sigue colgando de 005 y 007 de 006.
+    assert script.get_heads() == ["007_caja_recibos"]
     assert script.get_revision("006_presupuestos_cc").down_revision == "005_clinica"
+    assert script.get_revision("007_caja_recibos").down_revision == "006_presupuestos_cc"
 
 
 def test_c09_migracion_declara_checks_e_indices_del_modelo():
     from app.modelos import CuentaCorriente, ItemPresupuesto, Movimiento, Presupuesto
 
     texto = MIGRACION.read_text(encoding="utf-8")
+    # Lo que C-10 agregó a `movimiento` (D-15) vive en 007_caja_recibos.py, no en 006.
+    de_c10 = {"fk_movimiento_recibo", "ix_movimiento_recibo_id", "uq_movimiento_pago_recibo",
+              "ck_movimiento_pago_con_recibo"}
     for modelo in (Presupuesto, ItemPresupuesto, CuentaCorriente, Movimiento):
         nombres = {c.name for c in modelo.__table__.constraints if c.name}
         nombres |= {i.name for i in modelo.__table__.indexes}
+        nombres -= de_c10
         assert nombres, modelo
         for nombre in nombres:
             assert nombre in texto, f"{nombre} está en el modelo pero no en 006_presupuestos_cc.py"
@@ -167,4 +173,5 @@ async def test_c09_upgrade_deja_el_trigger_y_los_indices_parciales(monkeypatch):
     assert "WHERE (tipo = 'cargo'::text)" in indices["uq_movimiento_cargo_presupuesto"]
     assert "WHERE (anula_a_id IS NOT NULL)" in indices["uq_movimiento_anula_a"]
     assert "saldo" not in columnas
-    assert recibo_fk == 0
+    # Con 006 solo, `recibo_id` no tenía FK; al llegar a la cabeza 007 (C-10, D-15) la tiene.
+    assert recibo_fk == 1

@@ -23,7 +23,7 @@ export function movimiento(parcial: Partial<Movimiento> = {}): Movimiento {
 }
 
 export function cuenta(parcial: Partial<Cuenta> = {}): Cuenta {
-  return { paciente_id: 3, saldo: "36000.00", movimientos: [movimiento()], ...parcial };
+  return { paciente_id: 3, saldo: "36000.00", movimientos: [movimiento()], pendientes: [], ...parcial };
 }
 
 export function respuestaJson(cuerpo: unknown, status = 200): Response {

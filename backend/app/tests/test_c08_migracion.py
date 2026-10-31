@@ -23,8 +23,8 @@ def test_c08_cabeza_unica_005_sobre_004():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory(str(ALEMBIC_DIR))
-    # La cabeza avanzó con C-09 (006); 005 sigue colgando de 004 y 006 de 005.
-    assert script.get_heads() == ["006_presupuestos_cc"]
+    # La cabeza avanzó con C-10 (007); 005 sigue colgando de 004 y 006 de 005.
+    assert script.get_heads() == ["007_caja_recibos"]
     assert script.get_revision("005_clinica").down_revision == "004_espera"
     assert script.get_revision("006_presupuestos_cc").down_revision == "005_clinica"
 

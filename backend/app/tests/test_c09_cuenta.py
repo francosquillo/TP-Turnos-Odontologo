@@ -16,6 +16,7 @@ if str(BACKEND_DIR) not in sys.path:
 
 from c08_helpers import crear_turno  # noqa: E402
 from c09_helpers import sembrar_c09  # noqa: E402
+from c10_helpers import crear_recibo  # noqa: E402
 from db_utils import sesion_pg  # noqa: E402, F401
 
 AHORA = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
@@ -102,9 +103,10 @@ async def test_cuenta_con_pago_directo_refleja_saldo(sesion_pg):
     ps, cs, repos, m, a = await _escenario(sesion_pg)
     await _aceptado(ps, repos, m, a, codigo="OBT-001")  # 15000.00
     cuenta_db = await repos.cuentas.por_paciente(m.ana.id)
+    recibo = await crear_recibo(sesion_pg, m, monto="4000.00")
     await repos.cuentas.crear_movimiento(
         cuenta_db.id, tipo="pago", monto=Decimal("-4000.00"), concepto="Pago de prueba",
-        recibo_id=123, creado_por=m.admin.id)
+        recibo_id=recibo.id, creado_por=m.admin.id)
     await repos.cuentas.crear_movimiento(
         cuenta_db.id, tipo="ajuste", monto=Decimal("-1000.00"), concepto="Bonificación",
         motivo="cortesía", creado_por=m.admin.id)
@@ -112,7 +114,7 @@ async def test_cuenta_con_pago_directo_refleja_saldo(sesion_pg):
     assert cuenta.saldo == Decimal("10000.00")
     assert cuenta.model_dump(mode="json")["saldo"] == "10000.00"
     assert [x.tipo for x in cuenta.movimientos] == ["ajuste", "pago", "cargo"]
-    assert cuenta.movimientos[1].recibo_id == 123
+    assert cuenta.movimientos[1].recibo_id == recibo.id
 
 
 @pytest.mark.asyncio
@@ -120,8 +122,10 @@ async def test_cuenta_saldo_a_favor_es_negativo(sesion_pg):
     ps, cs, repos, m, a = await _escenario(sesion_pg)
     await _aceptado(ps, repos, m, a, codigo="PRO-001")  # 500.00
     cuenta_db = await repos.cuentas.por_paciente(m.ana.id)
+    recibo = await crear_recibo(sesion_pg, m, monto="700.00")
     await repos.cuentas.crear_movimiento(
-        cuenta_db.id, tipo="pago", monto=Decimal("-700.00"), concepto="Pago", creado_por=m.admin.id)
+        cuenta_db.id, tipo="pago", monto=Decimal("-700.00"), concepto="Pago",
+        recibo_id=recibo.id, creado_por=m.admin.id)
     assert (await cs.obtener_cuenta(repos, a["sec"], m.ana.id)).saldo == Decimal("-200.00")
 
 
@@ -205,8 +209,10 @@ async def test_anular_pago_409(sesion_pg):
     ps, cs, repos, m, a = await _escenario(sesion_pg)
     await _aceptado(ps, repos, m, a)
     cuenta_db = await repos.cuentas.por_paciente(m.ana.id)
+    recibo = await crear_recibo(sesion_pg, m, monto="10.00")
     pago = await repos.cuentas.crear_movimiento(
-        cuenta_db.id, tipo="pago", monto=Decimal("-10.00"), concepto="Pago", creado_por=m.admin.id)
+        cuenta_db.id, tipo="pago", monto=Decimal("-10.00"), concepto="Pago",
+        recibo_id=recibo.id, creado_por=m.admin.id)
     with pytest.raises(cs.ConflictoError):
         await cs.anular_cargo(repos, a["admin"], m.ana.id, pago.id, "x")
     assert await _contar(sesion_pg, "movimiento") == 2

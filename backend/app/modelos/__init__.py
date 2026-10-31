@@ -26,5 +26,6 @@ from app.modelos.hallazgo_odontograma import (  # noqa: E402
 from app.modelos.tratamiento import Tratamiento  # noqa: E402
 from app.modelos.presupuesto import ItemPresupuesto, Presupuesto  # noqa: E402
 from app.modelos.cuenta_corriente import CuentaCorriente, Movimiento  # noqa: E402
+from app.modelos.caja import Caja, MovimientoCaja, Recibo, ReciboContador  # noqa: E402
 
-__all__ = ["ItemPresupuesto", "Presupuesto", "CuentaCorriente", "Movimiento","Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario", "Notificacion", "Plantilla", "EsperaEntry", "HistoriaClinica", "EstadoHallazgoCatalogo", "HallazgoOdontograma", "Tratamiento"]
+__all__ = ["Caja", "MovimientoCaja", "Recibo", "ReciboContador", "ItemPresupuesto", "Presupuesto", "CuentaCorriente", "Movimiento","Base", "Paciente", "Profesional", "Rol", "Sillon", "Turno", "Usuario", "Notificacion", "Plantilla", "EsperaEntry", "HistoriaClinica", "EstadoHallazgoCatalogo", "HallazgoOdontograma", "Tratamiento"]

@@ -28,11 +28,20 @@ export interface Movimiento {
   anulado: boolean;
 }
 
+/** Presupuesto aceptado con importe por cobrar (C-10, D-17); derivado de los movimientos. */
+export interface Pendiente {
+  presupuesto_id: number;
+  total: string;
+  pendiente: string;
+}
+
 export interface Cuenta {
   paciente_id: number;
   /** Derivado por el servidor (suma de movimientos); positivo = deuda del paciente. */
   saldo: string;
   movimientos: Movimiento[];
+  /** Presupuestos que se pueden cobrar; el servidor la manda siempre (vacia si no hay). */
+  pendientes: Pendiente[];
 }
 
 export function esTipoMovimiento(valor: unknown): valor is TipoMovimiento {
