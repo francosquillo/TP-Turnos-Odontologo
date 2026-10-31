@@ -252,11 +252,12 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/07_flujos_principales.md` §Flujo 3
 
 ### [C-09] `presupuestos-cuenta-corriente`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 35/35 (2026-10-30) → `openspec/changes/archive/2026-10-30-c-09-presupuestos-cuenta-corriente/` — Verificado mode full 2026-10-30: backend 793/793, vitest 208/208, migración head `006_presupuestos_cc`. Specs principales creadas: `openspec/specs/presupuestos/spec.md` (18 requirements) y `openspec/specs/cuenta-corriente/spec.md` (11 requirements). Verify captures (9) archivadas con el change. GATE 6 abierto para C-10 (C-09 completo).
 - **Scope**:
   - Modelos: `Presupuesto (paciente_id, profesional_id, estado borrador|presentado|aceptado|rechazado|cobrado, total)`, `ItemPresupuesto (presupuesto_id, tratamiento_id/hallazgo_id, cantidad, precio)`; `CuentaCorriente (paciente_id unique, saldo derivado)`, `Movimiento (cc_id, tipo cargo|pago|ajuste, monto != 0, turno_id/presupuesto_id/recibo_id nullable)`
+  - Migración 006 (`006_presupuestos_cc`): tablas `presupuesto`, `item_presupuesto`, `cuenta_corriente`, `movimiento` (`recibo_id` sin FK, la agrega C-10); trigger `trg_movimiento_inmutable` BEFORE UPDATE/DELETE
   - Regla: presupuesto nace de hallazgos (cada ítem referencia hallazgo, RN-CL-01); estados hasta aceptado/cobrado o rechazado con motivo (RN-CL-02); aceptado → cargo automático a CC; saldo derivado nunca editable (RN-CO-03); anulación vía contramovimiento
-  - Endpoints: `CRUD /presupuestos`, `POST /presupuestos/:id/aceptar|rechazar`, `GET /cuentas/:paciente_id` (deuda, cargos, pagos)
+  - Endpoints: `CRUD /presupuestos`, `POST /presupuestos/:id/presentar`, `POST /presupuestos/:id/aceptar|rechazar`, `POST /presupuestos/:id/baja` (DELETE → 405), `GET /cuentas/:paciente_id` (deuda, cargos, pagos), `POST /cuentas/:paciente_id/movimientos/:id/anular`
   - Frontend `features/presupuestos, features/cuenta-corriente`: crear desde odontograma, ver deuda
   - Tests: ítem sin hallazgo → 422, flujo estados, cargo a CC, saldo derivado, contramovimiento
 - **Dependencias**: `C-08, C-04`
@@ -276,6 +277,11 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - Frontend `features/caja`: cobrar, cierre con diferencia, bloqueo día siguiente
   - Tests: secuencia recibos sin huecos, cierre obligatorio, diferencia declarada, anulación trazada
 - **Dependencias**: `C-09`
+- **Contrato recibido de C-09 (design.md D-16)**: C-09 deja `movimiento.recibo_id` como columna `BIGINT` nula **sin FK** (`recibo` no existe), y el `tipo = 'pago'` admitido por CHECK con signo negativo, leído en el saldo. C-10 agrega la FK e índice de `recibo_id` en su migración, escribe el pago con `recibo_id`, define y aplica cuándo un presupuesto pasa a `cobrado`, y mantiene el criterio de `concepto` (texto fijo sin PHI). Reutiliza el repo de cuentas (`asegurar`, `saldo`, `crear`). Anulación de `pago` en la ruta de C-09: `409`; C-10 la hace con `POST /recibos/:id/anular` (ajuste con `anula_a_id`).
+  - **Aviso**: el trigger de inmutabilidad impide completar `recibo_id` después, así que el pago debe nacer con él.
+  - **Aviso**: el cargo es por el total, sin descontar cobertura de OS.
+  - **Aviso**: KB dice `tarjeta` y la regla dura dice `tarjeta_simulada`; resolver en C-10.
+  - El bloqueo de RN-CO-01 no alcanza a C-09 (aceptar no mueve caja); C-10 confirma ese límite.
 - **Governance**: CRITICO
 - **Leer antes**:
   - `knowledge-base/04_modelo_de_datos.md` §Caja/CierreDiario/Recibo

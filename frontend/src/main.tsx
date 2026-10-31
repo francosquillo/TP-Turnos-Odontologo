@@ -4,6 +4,8 @@ import { App } from "./App";
 import "./styles/tokens.css";
 import "./styles/lista-espera.css";
 import "./styles/odontograma.css";
+import "./styles/presupuestos.css";
+import "./styles/cuenta-corriente.css";
 
 const raiz = document.getElementById("root");
 if (raiz === null) throw new Error("Falta #root en index.html");

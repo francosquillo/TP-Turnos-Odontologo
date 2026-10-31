@@ -23,8 +23,10 @@ def test_c08_cabeza_unica_005_sobre_004():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory(str(ALEMBIC_DIR))
-    assert script.get_heads() == ["005_clinica"]
+    # La cabeza avanzó con C-09 (006); 005 sigue colgando de 004 y 006 de 005.
+    assert script.get_heads() == ["006_presupuestos_cc"]
     assert script.get_revision("005_clinica").down_revision == "004_espera"
+    assert script.get_revision("006_presupuestos_cc").down_revision == "005_clinica"
 
 
 def test_c08_migracion_declara_checks_e_indices_del_modelo():
@@ -115,7 +117,7 @@ async def test_c08_downgrade_upgrade_limpio(monkeypatch):
     cfg = await _cfg(monkeypatch)
     await reset_estado_base(cfg, dsn_test())
     await asyncio.to_thread(command.upgrade, cfg, "head")
-    await asyncio.to_thread(command.downgrade, cfg, "-1")
+    await asyncio.to_thread(command.downgrade, cfg, "004_espera")
     engine = create_async_engine(dsn_test())
     try:
         async with engine.connect() as conn:

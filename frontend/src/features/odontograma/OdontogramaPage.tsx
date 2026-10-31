@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { ApiError } from "../../shared/api-client";
 import {
@@ -15,6 +15,11 @@ import { AlergiasAviso } from "./AlergiasAviso";
 import { Grilla } from "./Grilla";
 import { PiezaDetalle } from "./PiezaDetalle";
 import type { Catalogo, DatosHallazgo, Hallazgo, Historia } from "./tipos";
+
+// C-09: los presupuestos se cargan bajo demanda y reciben los hallazgos ya cargados.
+const PresupuestosPanel = lazy(() =>
+  import("../presupuestos/PresupuestosPanel").then((m) => ({ default: m.PresupuestosPanel })),
+);
 
 interface Props {
   pacienteId: number;
@@ -252,6 +257,9 @@ export function OdontogramaPage({ pacienteId, pacienteNombre, rol, alVolver }: P
           alCerrar={(): void => setPieza(null)}
         />
       )}
+      <Suspense fallback={<p className="muted">Cargando presupuestos…</p>}>
+        <PresupuestosPanel pacienteId={pacienteId} hallazgos={hallazgos} nombres={nombres} rol={rol} />
+      </Suspense>
     </section>
   );
 }

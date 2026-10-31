@@ -11,7 +11,7 @@ import { OfertaEspera } from "./pages/OfertaEspera";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "cuenta" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -41,16 +41,43 @@ const OdontogramaPage = lazy(() =>
   import("./features/odontograma/OdontogramaPage").then((m) => ({ default: m.OdontogramaPage })),
 );
 
+// C-09: la cuenta corriente tambien se carga bajo demanda.
+const CuentaPage = lazy(() =>
+  import("./features/cuenta-corriente/CuentaPage").then((m) => ({ default: m.CuentaPage })),
+);
+
 interface PacienteAbierto {
   id: number;
   nombre: string;
 }
 
-/** Agenda con acceso al odontograma solo para odontologo y secretaria (el admin no ve PHI). */
-function AgendaRuta({ alAbrir }: { alAbrir: (turno: TurnoAgenda) => void }): JSX.Element {
+interface AgendaRutaProps {
+  alAbrir: (turno: TurnoAgenda) => void;
+  alAbrirCuenta: (turno: TurnoAgenda) => void;
+}
+
+/** Agenda con acceso al odontograma para odontologo y secretaria (el admin no ve PHI) y a la
+ * cuenta corriente para secretaria y admin (el odontologo no la ve, D-15). */
+function AgendaRuta({ alAbrir, alAbrirCuenta }: AgendaRutaProps): JSX.Element {
   const { sesion } = useAuth();
   const habilita = sesion?.rol === "odontologo" || sesion?.rol === "secretaria";
-  return <AgendaPage {...(habilita ? { alAbrirOdontograma: alAbrir } : {})} />;
+  const habilitaCuenta = sesion?.rol === "secretaria" || sesion?.rol === "admin";
+  return (
+    <AgendaPage
+      {...(habilita ? { alAbrirOdontograma: alAbrir } : {})}
+      {...(habilitaCuenta ? { alAbrirCuenta } : {})}
+    />
+  );
+}
+
+function CuentaRuta({ paciente, alVolver }: { paciente: PacienteAbierto; alVolver: () => void }): JSX.Element {
+  const { sesion } = useAuth();
+  const rol = sesion?.rol === "admin" ? "admin" : "secretaria";
+  return (
+    <Suspense fallback={<p>Cargando cuenta corriente…</p>}>
+      <CuentaPage pacienteId={paciente.id} pacienteNombre={paciente.nombre} rol={rol} alVolver={alVolver} />
+    </Suspense>
+  );
 }
 
 function OdontogramaRuta({ paciente, alVolver }: { paciente: PacienteAbierto; alVolver: () => void }): JSX.Element {
@@ -139,12 +166,24 @@ export function App(): JSX.Element {
                 });
                 setPagina("odontograma");
               }}
+              alAbrirCuenta={(turno: TurnoAgenda): void => {
+                setPaciente({
+                  id: turno.paciente_id,
+                  nombre: turno.paciente_nombre ?? `Paciente ${turno.paciente_id}`,
+                });
+                setPagina("cuenta");
+              }}
             />
           </RequireRole>
         )}
         {pagina === "odontograma" && paciente !== null && (
           <RequireRole roles={["secretaria", "odontologo"]} alternativa={<Login />}>
             <OdontogramaRuta paciente={paciente} alVolver={(): void => setPagina("agenda")} />
+          </RequireRole>
+        )}
+        {pagina === "cuenta" && paciente !== null && (
+          <RequireRole roles={["secretaria", "admin"]} alternativa={<Login />}>
+            <CuentaRuta paciente={paciente} alVolver={(): void => setPagina("agenda")} />
           </RequireRole>
         )}
         {pagina === "espera" && (

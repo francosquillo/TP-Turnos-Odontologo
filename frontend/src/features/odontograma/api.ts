@@ -3,22 +3,21 @@
  * El motivo de una baja o correccion viaja en el cuerpo, nunca en la URL, y
  * nada de lo clinico se escribe en consola (D-12).
  */
-import { ApiError, apiUrl, fetchConAuth } from "../../shared/api-client";
+import { fetchConAuth } from "../../shared/api-client";
+import {
+  esObjeto,
+  esTextoONulo,
+  inesperada,
+  pedir,
+  type FetchAutenticado,
+} from "../../shared/api-json";
 import { CARAS } from "./tipos";
 import type { Catalogo, DatosHallazgo, Hallazgo, Historia, Listado } from "./tipos";
-
-type FetchAutenticado = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface CambiosHistoria {
   antecedentes?: string | null;
   alergias?: string | null;
 }
-
-const esObjeto = (valor: unknown): valor is Record<string, unknown> =>
-  typeof valor === "object" && valor !== null;
-
-const esTextoONulo = (valor: unknown): valor is string | null =>
-  valor === null || typeof valor === "string";
 
 function esHistoria(valor: unknown): valor is Historia {
   if (!esObjeto(valor)) return false;
@@ -64,48 +63,6 @@ function esCatalogo(valor: unknown): valor is Catalogo {
         ALCANCES.includes(e["alcance"]),
     )
   );
-}
-
-async function leerJson(respuesta: Response): Promise<unknown> {
-  try {
-    return (await respuesta.json()) as unknown;
-  } catch {
-    return null;
-  }
-}
-
-/** Mensaje legible: `detail` de texto tal cual; la lista de FastAPI (422) se resume. */
-function detalleDe(cuerpo: unknown): string {
-  if (esObjeto(cuerpo)) {
-    const detalle = cuerpo["detail"];
-    if (typeof detalle === "string") return detalle;
-    if (Array.isArray(detalle)) return "Datos inválidos";
-  }
-  return "";
-}
-
-async function errorDe(respuesta: Response): Promise<ApiError> {
-  const detalle = detalleDe(await leerJson(respuesta));
-  return new ApiError(respuesta.status, detalle || `La API respondió ${respuesta.status}`);
-}
-
-async function pedir(
-  ruta: string,
-  fetchFn: FetchAutenticado,
-  metodo: "GET" | "POST" | "PUT" | "PATCH" = "GET",
-  cuerpo?: unknown,
-): Promise<{ respuesta: Response; datos: unknown }> {
-  const init: RequestInit =
-    metodo === "GET"
-      ? {}
-      : { method: metodo, headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) };
-  const respuesta = await fetchFn(apiUrl(ruta), init);
-  if (!respuesta.ok) throw await errorDe(respuesta);
-  return { respuesta, datos: await leerJson(respuesta) };
-}
-
-function inesperada(respuesta: Response, que: string): ApiError {
-  return new ApiError(respuesta.status, `Respuesta de ${que} con forma inesperada`);
 }
 
 function hallazgoDe(respuesta: Response, datos: unknown): Hallazgo {

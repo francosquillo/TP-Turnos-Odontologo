@@ -22,9 +22,11 @@ function hoyLocal(): string {
 interface Props {
   /** C-08: abre el odontograma del paciente del turno (odontologo y secretaria). */
   alAbrirOdontograma?: (turno: TurnoAgenda) => void;
+  /** C-09: abre la cuenta corriente del paciente del turno (secretaria y admin). */
+  alAbrirCuenta?: (turno: TurnoAgenda) => void;
 }
 
-export function AgendaPage({ alAbrirOdontograma }: Props = {}): JSX.Element {
+export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): JSX.Element {
   const [vista, setVista] = useState<VistaAgenda>("dia");
   const [fecha, setFecha] = useState<string>(hoyLocal());
   const [turnos, setTurnos] = useState<TurnoAgenda[]>([]);
@@ -198,6 +200,7 @@ export function AgendaPage({ alAbrirOdontograma }: Props = {}): JSX.Element {
                 void alMarcar(t, estado);
               }}
               {...(alAbrirOdontograma === undefined ? {} : { alAbrirOdontograma })}
+              {...(alAbrirCuenta === undefined ? {} : { alAbrirCuenta })}
             />
           ))}
         </div>

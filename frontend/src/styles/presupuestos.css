@@ -1,0 +1,52 @@
+/* Estilos de presupuestos (C-09). Solo variables de ./tokens.css (Revision 1):
+ * sin colores literales ni tokens nuevos. Reutiliza .btn, .field, .input, .banner,
+ * .badge y .row de lista-espera.css. El color nunca informa solo: cada estado
+ * lleva texto ("Presentado", "Aceptado", ...). */
+
+.pres-panel { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+.pres-panel h3 { font-size: var(--text-lg); line-height: var(--leading-tight); margin: 0 0 var(--space-2); }
+.pres-panel .muted { color: var(--color-text-muted); font-size: var(--text-sm); }
+
+.pres-lista { list-style: none; margin: 0 0 var(--space-4); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.pres-lista li { border-bottom: 1px solid var(--color-border); }
+.pres-lista li:last-child { border-bottom: 0; }
+.pres-fila {
+  display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between;
+  width: 100%; min-height: var(--target-min); padding: var(--space-3) var(--space-4);
+  font: inherit; color: var(--color-text); text-align: left;
+  background: var(--color-surface); border: 0; cursor: pointer;
+}
+.pres-fila:hover { background: var(--color-primary-soft); }
+.pres-fila:focus-visible { outline: var(--focus-ring); outline-offset: calc(var(--focus-offset) * -1); }
+.pres-fila[aria-pressed="true"] { background: var(--color-primary-soft); box-shadow: inset 4px 0 0 var(--color-primary); }
+.pres-importe { font-variant-numeric: tabular-nums; }
+
+/* Estados: fondo, texto y punto de los tokens existentes; el texto siempre acompana. */
+.badge[data-pres="borrador"] { --bg: var(--estado-ausente-bg); --fg: var(--estado-ausente-text); --dot: var(--estado-ausente); }
+.badge[data-pres="presentado"] { --bg: var(--color-info-soft); --fg: var(--color-info-text); --dot: var(--estado-confirmado); }
+.badge[data-pres="aceptado"] { --bg: var(--color-success-soft); --fg: var(--color-success-text); --dot: var(--estado-asistido); }
+.badge[data-pres="rechazado"] { --bg: var(--color-danger-soft); --fg: var(--color-danger-text); --dot: var(--estado-cancelado); }
+.badge[data-pres="cobrado"] { --bg: var(--espera-convertida-bg); --fg: var(--espera-convertida-text); --dot: var(--espera-convertida); }
+
+.pres-detalle { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-4); margin-bottom: var(--space-4); }
+.pres-detalle-cabecera { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; margin-bottom: var(--space-3); }
+.pres-detalle-cabecera h4 { margin: 0; font-size: var(--text-md); }
+.pres-items { list-style: none; margin: 0 0 var(--space-3); padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.pres-items li { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+.pres-items li:last-child { border-bottom: 0; }
+.pres-items .titulo { font-weight: var(--weight-medium); }
+.pres-total { font-size: var(--text-md); margin: var(--space-2) 0; }
+.pres-total strong { font-size: var(--text-lg); font-variant-numeric: tabular-nums; }
+
+.pres-aviso { display: inline-block; padding: var(--space-1) var(--space-3); border-radius: var(--radius-sm); background: var(--color-warning-soft); color: var(--color-warning-text); font-size: var(--text-sm); }
+
+.pres-form, .motivo-form { background: var(--color-surface-alt); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin: var(--space-2) 0 var(--space-4); }
+.pres-item-form { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); padding: var(--space-3); margin: 0 0 var(--space-3); }
+.pres-item-form legend { font-weight: var(--weight-medium); font-size: var(--text-sm); padding: 0 var(--space-2); }
+.pres-form :focus-visible, .motivo-form :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+.pres-acciones, .motivo-acciones { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
+.motivo-error { color: var(--color-danger-text); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pres-fila { transition: background-color var(--motion-fast) var(--ease-out); }
+}

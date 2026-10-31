@@ -23,6 +23,7 @@ El paciente **no tiene usuario autenticado** en v1.0: opera vía reserva públic
 | Odontograma/HC | — | CRUD propios | Ver |
 | Presupuestos | Ver | CRUD | Ver + cobrar |
 | Caja/cierre | Ver + anular | — | Cobrar + cierre |
+| Cuenta corriente | Ver + anular | — | Ver |
 | Liquidaciones OS | CRUD + exportar | Ver | — |
 | Reportes/exportación total | Sí | Propios | — |
 

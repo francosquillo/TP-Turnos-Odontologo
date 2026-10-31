@@ -10,6 +10,8 @@ interface Props {
   alMarcar: (turno: TurnoAgenda, estado: "asistido" | "ausente") => void;
   /** C-08: solo odontologo y secretaria lo reciben; sin esta funcion no hay acceso. */
   alAbrirOdontograma?: (turno: TurnoAgenda) => void;
+  /** C-09: solo secretaria y admin lo reciben; sin esta funcion no hay acceso a la cuenta. */
+  alAbrirCuenta?: (turno: TurnoAgenda) => void;
 }
 
 export function TurnoCard({
@@ -19,6 +21,7 @@ export function TurnoCard({
   alConfirmar,
   alMarcar,
   alAbrirOdontograma,
+  alAbrirCuenta,
 }: Props): JSX.Element {
   return (
     <article
@@ -50,6 +53,11 @@ export function TurnoCard({
         {alAbrirOdontograma !== undefined && (
           <button type="button" onClick={(): void => alAbrirOdontograma(turno)}>
             Odontograma
+          </button>
+        )}
+        {alAbrirCuenta !== undefined && (
+          <button type="button" onClick={(): void => alAbrirCuenta(turno)}>
+            Cuenta corriente
           </button>
         )}
         {turno.estado === "confirmado" && (

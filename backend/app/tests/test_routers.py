@@ -17,15 +17,17 @@ ESPERADOS = [
     "/os",
     "/notificaciones",
     "/admin",
+    "/presupuestos",
+    "/cuentas",
 ]
 
 
 def test_routers_con_prefix_y_tags():
     import app.main  # noqa: F401
     from app.api import admin, auth, clinica, cobros, notificaciones, obras_sociales
-    from app.api import pacientes, profesionales, sillones, turnos
+    from app.api import cuentas, pacientes, presupuestos, profesionales, sillones, turnos
 
-    for mod in (auth, pacientes, profesionales, sillones, turnos, clinica, cobros, obras_sociales, notificaciones, admin):
+    for mod in (auth, pacientes, profesionales, sillones, turnos, clinica, cobros, obras_sociales, notificaciones, admin, presupuestos, cuentas):
         assert mod.router.prefix, f"{mod.__name__} sin prefix"
         assert mod.router.tags, f"{mod.__name__} sin tags"
 
