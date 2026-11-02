@@ -25,7 +25,7 @@ Actualización 2026-10-05: las 11 decisiones del equipo dejan este archivo sin p
 | Media | ¿AFIP entra en el TP o queda en escalamiento? | **Escalamiento** (fuera de v1.0). | 06 (nota Épica E), 01 (ya estaba fuera de alcance) |
 | Media | ¿Pagos reales (sandbox MP) o simulados? | **Simulados.** Sin integración real MP en v1.0. | 06 (US-031 CA-4), 07 (Flujo 4), 08 (nota seguridad) |
 | Media | ¿Dónde se despliega y con qué política las HC de prueba? | **Localmente (Docker Compose local).** Datos ficticios; sin cloud en v1.0. | 08 (seguridad + despliegue), 02 |
-| Media | Plazo de entrega del TP (hitos) | **12 de Octubre 2026.** Restricción dura; equipo 3, ~7 días desde el 05/10. | 01 (sección plazo), 10 |
+| Media | Plazo de entrega del TP (hitos) | **8 de Noviembre 2026.** Restricción dura; equipo 3, plazo original 12/10 extendido el 01/11. | 01 (sección plazo), 10 |
 | Baja | ¿Sede única alcanza en v1.0? | **Sí, sede única.** Sin multi-sede en v1.0; extensible. | 04 (Sillon.sede), 06, 01 (fuera de alcance), 09 (SU-03) |
 | Baja | Ventana de expiración de oferta de lista de espera (2 h propuesto) | **Sí, 2 horas** (confirmado). | 05 (RN-TU-06), 07 (Flujo 6), 06 (US-012) |
 

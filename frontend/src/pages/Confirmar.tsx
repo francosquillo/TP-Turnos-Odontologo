@@ -14,6 +14,35 @@ function contactoDe(cuerpo: unknown): string {
   return CONTACTO_FALLBACK;
 }
 
+interface Resultado {
+  estado: Exclude<Estado, "cargando">;
+  contacto: string | null;
+}
+
+/**
+ * Una peticion por token: GET /confirmar/<token> consume el token en el primer 200, y bajo
+ * React StrictMode el efecto corre dos veces; la segunda peticion daria 410 ("El link vencio").
+ */
+const PETICIONES = new Map<string, Promise<Resultado>>();
+
+function confirmarUnaVez(token: string): Promise<Resultado> {
+  const previa = PETICIONES.get(token);
+  if (previa !== undefined) return previa;
+  const nueva: Promise<Resultado> = fetch(apiUrl(`/confirmar/${token}`))
+    .then(async (respuesta): Promise<Resultado> => {
+      if (respuesta.status === 200) return { estado: "confirmado", contacto: null };
+      const estado = respuesta.status === 410 ? "expirado" : "invalido";
+      try {
+        return { estado, contacto: contactoDe((await respuesta.json()) as unknown) };
+      } catch {
+        return { estado: "invalido", contacto: null };
+      }
+    })
+    .catch((): Resultado => ({ estado: "invalido", contacto: null }));
+  PETICIONES.set(token, nueva);
+  return nueva;
+}
+
 /** Confirmacion por token C-05: cargando|confirmado|expirado|invalido (sin Bearer). */
 export function Confirmar(props: { token: string }): JSX.Element {
   const [estado, setEstado] = useState<Estado>("cargando");
@@ -25,31 +54,16 @@ export function Confirmar(props: { token: string }): JSX.Element {
       return;
     }
     let vivo = true;
-    fetch(apiUrl(`/confirmar/${props.token}`))
-      .then((respuesta) => {
-        if (!vivo) return;
-        if (respuesta.status === 200) {
-          setEstado("confirmado");
-          return;
-        }
-        return respuesta
-          .json()
-          .then((cuerpo: unknown) => {
-            if (!vivo) return;
-            setContacto(contactoDe(cuerpo));
-            setEstado(respuesta.status === 410 ? "expirado" : "invalido");
-          })
-          .catch(() => {
-            if (vivo) setEstado("invalido");
-          });
-      })
-      .catch(() => {
-        if (vivo) setEstado("invalido");
-      });
+    void confirmarUnaVez(props.token).then((resultado) => {
+      if (!vivo) return;
+      if (resultado.contacto !== null) setContacto(resultado.contacto);
+      setEstado(resultado.estado);
+    });
     return (): void => {
       vivo = false;
     };
   }, [props.token]);
+
 
   return (
     <section>

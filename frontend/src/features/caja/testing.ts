@@ -1,5 +1,5 @@
 /** Fixtures compartidas por los tests de caja (datos 100% ficticios). */
-import type { Caja, Cobro, EstadoCaja, Recibo } from "./tipos";
+import type { Caja, Cobro, EstadoCaja, IngresoLiquidacion, Recibo } from "./tipos";
 
 let secuencia = 100;
 
@@ -54,6 +54,19 @@ export function estadoCaja(parcial: Partial<EstadoCaja> = {}): EstadoCaja {
       { medio: "efectivo", subtotal: "1000.00" },
       { medio: "transferencia", subtotal: "500.00" },
     ],
+    ingresos_liquidacion: [],
+    ...parcial,
+  };
+}
+
+export function ingresoLiquidacion(parcial: Partial<IngresoLiquidacion> = {}): IngresoLiquidacion {
+  return {
+    liquidacion_id: 3,
+    obra_social: "OS Ficticia Demo",
+    periodo: "2026-10-01",
+    medio: "transferencia",
+    monto: "10500.00",
+    created_at: "2026-10-31T16:00:00Z",
     ...parcial,
   };
 }

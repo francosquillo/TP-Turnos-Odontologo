@@ -21,6 +21,7 @@ import type {
   DatosCobro,
   DesgloseMedio,
   EstadoCaja,
+  IngresoLiquidacion,
   Recibo,
 } from "./tipos";
 
@@ -55,9 +56,22 @@ function esDesglose(valor: unknown): valor is DesgloseMedio {
   return esObjeto(valor) && esMedio(valor["medio"]) && esImporte(valor["subtotal"]);
 }
 
+function esIngresoLiquidacion(valor: unknown): valor is IngresoLiquidacion {
+  return (
+    esObjeto(valor) &&
+    typeof valor["liquidacion_id"] === "number" &&
+    typeof valor["obra_social"] === "string" &&
+    typeof valor["periodo"] === "string" &&
+    esMedio(valor["medio"]) &&
+    esImporte(valor["monto"]) &&
+    typeof valor["created_at"] === "string"
+  );
+}
+
 function esEstadoCaja(valor: unknown): valor is EstadoCaja {
   if (!esObjeto(valor)) return false;
   const desglose = valor["desglose"];
+  const ingresos = valor["ingresos_liquidacion"];
   return (
     typeof valor["fecha"] === "string" &&
     typeof valor["hoy"] === "string" &&
@@ -65,7 +79,9 @@ function esEstadoCaja(valor: unknown): valor is EstadoCaja {
     (valor["bloqueo"] === null || esBloqueo(valor["bloqueo"])) &&
     (valor["caja"] === null || esCaja(valor["caja"])) &&
     Array.isArray(desglose) &&
-    desglose.every(esDesglose)
+    desglose.every(esDesglose) &&
+    Array.isArray(ingresos) &&
+    ingresos.every(esIngresoLiquidacion)
   );
 }
 

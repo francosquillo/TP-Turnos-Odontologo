@@ -5,7 +5,7 @@
 > **Leer este archivo antes de ejecutar cualquier `/opsx:propose`.**
 
 > **Restricciones del checkpoint 2026-10-05 (vinculantes para todos los changes):**
-> Prioridad 1 = Turnos/Agenda (Épica A+B primero) · Plazo duro 12/10/2026 (~7 días, equipo 3)
+> Prioridad 1 = Turnos/Agenda (Épica A+B primero) · Plazo duro 08/11/2026 (extendido el 01/11/2026, equipo 3)
 > Sede única v1.0 (`Sillon.sede` texto extensible) · Rol simple FK (`usuario.rol_id`, sin tabla intermedia)
 > Dueño = Admin (alias, sin rol separado) · Pagos simulados (sin MP real) · AFIP post-TP
 > OS ficticia ("OS Ficticia Demo") · Deploy local Docker Compose · Datos 100% ficticios, arquitectura prod-ready.
@@ -290,7 +290,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/07_flujos_principales.md` §Flujo 4
 
 ### [C-11] `obras-sociales-liquidacion`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 39/39 (2026-11-02) → `openspec/changes/archive/2026-11-02-c-11-obras-sociales-liquidacion/` — Verificado mode full 2026-11-02 en una sola corrida: backend 1344/1344, vitest 396/396, migración head `008_obras_sociales`. Specs principales creadas: `openspec/specs/obras-sociales/spec.md` (4 requirements) y `openspec/specs/liquidaciones/spec.md` (9 requirements); deltas en caja, presupuestos, cuenta-corriente y core-models.
 - **Scope**:
   - Modelos: `ObraSocial, Plan, Arancel (código_nomenclador, precio, vigencia_desde/hasta)`, `Liquidacion (os_id, período mes, estado borrador|presentada|cobrada, total)`, `ItemLiquidacion (prestación turno_id/tratamiento, arancel aplicado, monto)`
   - Seed OS ficticia "OS Ficticia Demo" + planes/aranceles ejemplo; arancel vigente a fecha prestación (RN-OS-03); prestación sin arancel → fila revisión manual
@@ -321,7 +321,7 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
 > Paralelizable desde GATE 2 (base) y completada al final (E2E + seed demo). Si el plazo aprieta, recortar reseñas primero.
 
 ### [C-12] `admin-cierre-demo`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` archivado 25/27 (2026-11-02) → `openspec/changes/archive/2026-11-02-c-12-admin-cierre-demo/` — verify full 2026-11-02 backend 1484/1484, vitest 421/421, migración head `009_auditoria_admin`; correcciones del recorrido (sección 11) verificadas solo con tests de lo tocado; R1 reseña Google y R2 Google Calendar diferidos (plazo 08/11/2026, decisión del usuario); specs principales creadas: `openspec/specs/admin-usuarios/spec.md` (3 requirements), `auditoria-admin` (2), `datos-import-export` (2), `integracion-google-calendar` (1), `seguridad-publica` (2); deltas en `auth-rbac`, `core-models-identidad-pacientes` y `notificaciones-whatsapp`.
 - **Scope**:
   - `CRUD /admin/usuarios` (matriz `03`, resguardo último admin ya en C-03, UI gestión); `CRUD /admin/aranceles` (versión simple, audita cambios RN-GL-02)
   - `POST /pacientes/import` Excel/CSV con reporte errores por fila + `GET /admin/export-total` (descargable anti-lock-in, vía worker)

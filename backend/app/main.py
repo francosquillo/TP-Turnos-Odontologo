@@ -12,10 +12,19 @@ from fastapi.responses import JSONResponse
 from app.api import admin, agenda, auth, clinica, cobros, disponibilidad
 from app.api import caja, cuentas, historias, lista_espera, odontograma, presupuestos, recibos, tratamientos
 from app.api import notificaciones
+from app.api import aranceles, cobertura, liquidaciones, planes
 from app.api import obras_sociales as os_api
 from app.api import pacientes, profesionales, reservas, sillones, turnos
-from app.api import webhooks
+from app.api import seguridad, webhooks
 from app.core.config import get_settings
+
+
+def _url_para_asyncpg(url: str) -> str:
+    """DATABASE_URL usa el esquema de SQLAlchemy (postgresql+asyncpg://); asyncpg espera postgresql://."""
+    esquema, separador, resto = url.partition("://")
+    if separador == "":
+        return url
+    return f"postgresql://{resto}" if esquema.split("+")[0] in ("postgresql", "postgres") else url
 
 
 async def check_postgres() -> str:
@@ -24,7 +33,7 @@ async def check_postgres() -> str:
 
     settings = get_settings()
     try:
-        conn = await asyncpg.connect(settings.database_url, timeout=2)
+        conn = await asyncpg.connect(_url_para_asyncpg(settings.database_url), timeout=2)
         try:
             await conn.fetchval("SELECT 1")
         finally:
@@ -95,7 +104,12 @@ def create_app() -> FastAPI:
         cuentas.router,
         caja.router,
         recibos.router,
+        planes.router,
+        aranceles.router,
+        cobertura.router,
+        liquidaciones.router,
         webhooks.router,
+        seguridad.router,
         admin.router,
     ):
         app.include_router(router)

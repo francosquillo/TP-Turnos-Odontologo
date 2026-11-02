@@ -23,6 +23,9 @@ class Paciente(Base):
         ),
         sa.Index("ix_paciente_apellido", "apellido"),
         sa.Index("ix_paciente_telefono", "telefono"),
+        # C-11 (D-07): plan opcional; la obra social se deriva del plan.
+        sa.ForeignKeyConstraint(["plan_id"], ["plan.id"], ondelete="RESTRICT"),
+        sa.Index("ix_paciente_plan_id", "plan_id"),
     )
 
     id: Mapped[int] = mapped_column(
@@ -35,6 +38,7 @@ class Paciente(Base):
     email: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     cobertura_os: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
     notas: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    plan_id: Mapped[int | None] = mapped_column(sa.BigInteger, nullable=True)
     consentimiento_datos: Mapped[bool] = mapped_column(
         sa.Boolean, nullable=False, server_default=sa.false()
     )

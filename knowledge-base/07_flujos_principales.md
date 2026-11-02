@@ -34,10 +34,10 @@
 
 ## Flujo 5: Liquidación de obra social
 **Disparador**: fin de mes. **Actor**: admin (dueño como alias).
-1. Elige OS + período → sistema lista prestaciones × arancel vigente (RN-OS-03).
+1. Elige OS + período → sistema genera un `borrador` con las prestaciones (ítems de presupuestos aceptados con plan de esa OS) y el arancel **congelado al aceptar** (RN-OS-03). Un borrador se puede descartar y regenerar.
 2. Revisa, marca estado `presentada`, exporta CSV/PDF.
-3. Al cobrar: `cobrada` + registra en caja como ingreso.
-**Casos de error**: prestación sin arancel vigente → fila marcada para revisión manual.
+3. Al cobrar: `cobrada` + registra en caja como ingreso (sin recibo), en la caja de hoy.
+**Casos de error**: prestación sin arancel al aceptar → fila `revision` con monto 0, no suma ni bloquea presentar (el paciente ya pagó el total: se resuelve fuera del sistema). Cobro con caja pendiente/cerrada → 409. **Reversión del cobro**: contramovimiento negativo en la caja de hoy con motivo; la liquidación vuelve a `presentada` y no se puede volver a cobrar.
 
 ## Flujo 6: Lista de espera con cierre de loop
 **Disparador**: cancelación libera hueco. **Actor**: sistema.

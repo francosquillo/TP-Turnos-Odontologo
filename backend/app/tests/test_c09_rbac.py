@@ -147,14 +147,17 @@ def test_no_existe_ruta_de_cobro():
     for path, metodos in propias:
         assert not any(palabra in path.lower() for palabra in _PALABRAS_DE_COBRO), path
     # En todo el árbol, las rutas de cobro viven solo bajo /caja y /recibos (C-10, D-22),
-    # además del stub de C-01 (/cobros, solo GET). Ninguna cuelga de /cuentas ni /presupuestos.
+    # además del stub de C-01 (/cobros, solo GET) y, desde C-11 (D-12, D-13), el cobro y la
+    # reversión de una liquidación. Ninguna cuelga de /cuentas ni /presupuestos.
     cobros = sorted(
         (p, mt) for p, mt in rutas
         if "cobr" in p.lower() or "recibo" in p.lower() or "pago" in p.lower()
     )
     assert cobros == [
-        ("/caja/cobrar", ["POST"]), ("/cobros", ["GET"]), ("/recibos", ["GET"]),
-        ("/recibos/{recibo_id}/anular", ["POST"]),
+        ("/caja/cobrar", ["POST"]), ("/cobros", ["GET"]),
+        ("/liquidaciones/{liquidacion_id}/cobrar", ["POST"]),
+        ("/liquidaciones/{liquidacion_id}/revertir-cobro", ["POST"]),
+        ("/recibos", ["GET"]), ("/recibos/{recibo_id}/anular", ["POST"]),
     ], cobros
     # Ninguna ruta de cuentas permite crear movimientos: la única escritura es `anular`.
     escrituras = {p for p, mt in propias if p.startswith("/cuentas") and set(mt) - {"GET", "HEAD"}}

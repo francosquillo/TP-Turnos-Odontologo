@@ -15,6 +15,7 @@ from db_utils import sesion_pg  # noqa: F401  (fixture PG real con skip sin Dock
 from app.core.deps import get_current_user, get_usuario_repo, require_role
 from app.main import create_app
 from c03_fakes import FakeRepo, FakeStore, fabricar_usuario
+from c12_fakes import override_auditoria
 
 
 @pytest.mark.asyncio
@@ -117,6 +118,7 @@ def _app_admin_con(repo):
 
     app = create_app()
     app.dependency_overrides[get_usuario_repo] = lambda: repo
+    override_auditoria(app)  # C-12 R3: las acciones admin registran un evento
     transporte = ASGITransport(app=app)
     cliente = AsyncClient(transport=transporte, base_url="http://test")
 

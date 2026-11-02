@@ -104,4 +104,48 @@ describe("AgendaPage C-04", () => {
     await screen.findByText("Demo Paciente");
     expect(screen.queryByRole("button", { name: /odontograma/i })).toBeNull();
   });
+
+  it("tras cambiar el estado la tarjeta conserva los nombres (C-12 11.4)", async () => {
+    // PATCH /turnos/{id}/estado devuelve TurnoOut: sin paciente_nombre ni sillon_nombre.
+    const respuestaEstado = {
+      id: 1,
+      inicio: "2026-10-12T11:00:00Z",
+      fin: "2026-10-12T11:30:00Z",
+      estado: "asistido",
+      paciente_id: 1,
+      profesional_id: 1,
+      sillon_id: 1,
+      origen: "staff",
+    };
+    const fetchMock = vi.fn().mockImplementation((url: unknown, init?: RequestInit) => {
+      if (String(url).includes("/estado") && init?.method === "PATCH") {
+        return Promise.resolve(respuestaJson(respuestaEstado, 200));
+      }
+      return Promise.resolve(respuestaJson(TURNOS, 200));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const usuario = userEvent.setup();
+    render(<AgendaPage />);
+    await usuario.click(await screen.findByRole("button", { name: "Asistido" }));
+    const tarjeta = (await screen.findByText(/^asistido ·/)).closest("article");
+    expect(tarjeta?.textContent).toContain("Demo Paciente");
+    expect(tarjeta?.textContent).toContain("Sillón 1");
+    expect(tarjeta?.textContent).not.toContain("Paciente 1");
+  });
+
+  it("si la respuesta trae nombres, prevalecen sobre los de la fila previa", async () => {
+    const fetchMock = vi.fn().mockImplementation((url: unknown, init?: RequestInit) => {
+      if (String(url).includes("/estado") && init?.method === "PATCH") {
+        return Promise.resolve(
+          respuestaJson({ ...TURNOS[0], estado: "asistido", paciente_nombre: "Nombre Nuevo" }, 200),
+        );
+      }
+      return Promise.resolve(respuestaJson(TURNOS, 200));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const usuario = userEvent.setup();
+    render(<AgendaPage />);
+    await usuario.click(await screen.findByRole("button", { name: "Asistido" }));
+    expect(await screen.findByText("Nombre Nuevo")).toBeDefined();
+  });
 });

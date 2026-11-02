@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.core.config import Settings, get_settings
 from app.modelos import Usuario
+from app.repos.auditoria_repo import AuditoriaRepository
 from app.repos.usuario_repo import UsuarioRepository
 from app.servicios.auth_servicio import SesionStore
 
@@ -63,6 +64,13 @@ def get_usuario_repo(db: DbDep) -> UsuarioRepository:
 
 
 RepoDep = Annotated[UsuarioRepository, Depends(get_usuario_repo)]
+
+def get_auditoria_repo(db: DbDep) -> AuditoriaRepository:
+    """Repo de auditoria sobre la sesion del request (mockeable en tests)."""
+    return AuditoriaRepository(db)
+
+
+AuditoriaDep = Annotated[AuditoriaRepository, Depends(get_auditoria_repo)]
 
 EsquemaBearer = HTTPBearer(auto_error=False)
 BearerDep = Annotated[HTTPAuthorizationCredentials | None, Depends(EsquemaBearer)]

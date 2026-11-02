@@ -14,7 +14,11 @@ ESPERADOS = [
     "/turnos",
     "/clinica",
     "/cobros",
-    "/os",
+    "/obras-sociales",
+    "/planes",
+    "/aranceles",
+    "/validador-cobertura",
+    "/liquidaciones",
     "/notificaciones",
     "/admin",
     "/presupuestos",
@@ -28,8 +32,9 @@ def test_routers_con_prefix_y_tags():
     import app.main  # noqa: F401
     from app.api import admin, auth, clinica, cobros, notificaciones, obras_sociales
     from app.api import caja, cuentas, pacientes, presupuestos, profesionales, recibos, sillones, turnos
+    from app.api import aranceles, cobertura, liquidaciones, planes
 
-    for mod in (auth, pacientes, profesionales, sillones, turnos, clinica, cobros, obras_sociales, notificaciones, admin, presupuestos, cuentas, caja, recibos):
+    for mod in (auth, pacientes, profesionales, sillones, turnos, clinica, cobros, obras_sociales, notificaciones, admin, presupuestos, cuentas, caja, recibos, planes, aranceles, cobertura, liquidaciones):
         assert mod.router.prefix, f"{mod.__name__} sin prefix"
         assert mod.router.tags, f"{mod.__name__} sin tags"
 

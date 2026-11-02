@@ -3,7 +3,9 @@
 Lectura: odontólogo vinculado, secretaria y admin (vista financiera). Escritura:
 solo el odontólogo autor. Sin DELETE: la baja es lógica con motivo (RN-GL-01).
 Los motivos viajan en el cuerpo, nunca en la URL (no entran a access logs).
-Sin ruta de cobro: `cobrado` y `pago` los define C-10. El servicio solo hace
+Sin ruta de cobro: `pago` lo registra solo `POST /caja/cobrar` (C-10). `cobrado` lo marca la
+caja al saldar el pendiente o, desde C-11, `aceptar` cuando la cobertura de la obra social
+salda todo el importe (sin recibo); ninguna ruta acepta `estado` en el cuerpo. El servicio solo hace
 flush; este router es dueño del commit. Todas las respuestas pasan por
 `svc.a_salida`, el único punto que aplica la vista financiera del admin.
 """

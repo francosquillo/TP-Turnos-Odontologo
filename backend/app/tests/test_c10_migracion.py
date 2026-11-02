@@ -48,7 +48,8 @@ def test_c10_cabeza_unica_007_sobre_006():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory(str(ALEMBIC_DIR))
-    assert script.get_heads() == ["007_caja_recibos"]
+    # La cabeza avanzó con C-11 (008); 007 sigue colgando de 006.
+    assert script.get_heads() == ["009_auditoria_admin"]
     assert script.get_revision("007_caja_recibos").down_revision == "006_presupuestos_cc"
 
 
@@ -56,9 +57,13 @@ def test_c10_migracion_declara_checks_e_indices_del_modelo():
     from app.modelos import Caja, Movimiento, MovimientoCaja, Recibo, ReciboContador
 
     texto = MIGRACION.read_text(encoding="utf-8")
+    # Lo que C-11 agregó a `movimiento_caja` (D-14) vive en 008_obras_sociales.py.
+    de_c11 = {"ck_movcaja_una_referencia", "ix_movcaja_liquidacion_id",
+              "uq_movcaja_liq_ingreso", "uq_movcaja_liq_reversion"}
     for modelo in (Caja, Recibo, ReciboContador, MovimientoCaja):
         nombres = {c.name for c in modelo.__table__.constraints if c.name}
         nombres |= {i.name for i in modelo.__table__.indexes}
+        nombres -= de_c11
         assert nombres, modelo
         for nombre in nombres:
             assert nombre in texto, f"{nombre} está en el modelo pero no en 007_caja_recibos.py"

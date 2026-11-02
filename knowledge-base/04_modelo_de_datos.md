@@ -21,7 +21,7 @@ Hallazgo *──* Tratamiento → Presupuesto 1──* ItemPresupuesto
 Paciente 1──1 CuentaCorriente 1──* Movimiento
 Caja 1──* MovimientoCaja *──1 Recibo (el cierre diario son columnas de Caja)
 ObraSocial 1──* Plan 1──* Arancel (nomenclador: código + precio + vigencia)
-Liquidacion 1──* ItemLiquidacion (turno/prestación × arancel)
+Liquidacion 1──* ItemLiquidacion (prestación = ítem de presupuesto aceptado × arancel congelado)
 Turno 1──* Notificacion · Paciente 1──* EsperaEntry
 ```
 
@@ -34,7 +34,7 @@ Turno 1──* Notificacion · Paciente 1──* EsperaEntry
 - Índices: email.
 
 ### Paciente
-- Atributos: id, nombre, apellido, dni (unique nullable), teléfono, email, obra_social_id + plan_id (nullable), notas, consentimiento_datos (bool + fecha).
+- Atributos: id, nombre, apellido, dni (unique nullable), teléfono, email, plan_id (nullable, FK a Plan; la obra social se deriva del plan — C-11 D-07), notas, consentimiento_datos (bool + fecha).
 - Relaciones: 1—1 HistoriaClinica, 1—1 CuentaCorriente, 1—* Turno, 1—* EsperaEntry.
 - Índices: dni, apellido, teléfono.
 
@@ -48,7 +48,7 @@ Turno 1──* Notificacion · Paciente 1──* EsperaEntry
 
 ### Turno
 - Atributos: id, paciente_id, profesional_id, sillon_id, inicio, fin, estado (pendiente|confirmado|asistido|ausente|cancelado), origen (secretaria|online|lista_espera), token_confirmacion (nullable, hash), sobre_turno (bool).
-- Relaciones: 1—* Notificacion, 0—1 ItemLiquidacion.
+- Relaciones: 1—* Notificacion. (La relación con `ItemLiquidacion` es vía el ítem de presupuesto, no vía turno — C-11 D-02.)
 - Constraints: **anti-solapamiento**: exclusion por (profesional|sillon, rango) — `EXCLUDE USING gist (profesional WITH =, tstzrange(inicio,fin) WITH &&)` ídem sillón; sobreturno solo con flag explícito + auditoría.
 - Índices: (profesional, inicio), (sillon, inicio), estado, token hash.
 
@@ -76,7 +76,11 @@ Turno 1──* Notificacion · Paciente 1──* EsperaEntry
 ### ObraSocial / Plan / Arancel / Liquidacion
 - OS: id, nombre, activa. Plan: id, os_id, nombre.
 - Arancel: id, plan_id, código_nomenclador, descripción, precio, vigencia_desde/hasta.
-- Liquidación: id, os_id, período (mes), estado (borrador|presentada|cobrada), total. Items: prestación (turno_id/tratamiento), arancel aplicado, monto.
+- Liquidación: id, os_id, período (mes, DATE día 1), estado (borrador|presentada|cobrada), total, autores y fechas de presentar/cobrar/revertir. Un período puede tener más de una liquidación.
+- ItemLiquidacion: id, liquidacion_id, **item_presupuesto_id (UNIQUE: una prestación se liquida una sola vez)**, plan_id, arancel_id (nulo = revisión manual, monto 0), fecha_prestacion, monto. No referencia `turno_id`.
+- **Prestación (v1.0, C-11 D-02)**: es un ítem de un presupuesto `aceptado` o `cobrado`; su fecha es el día operativo de la aceptación. Se liquida lo *acordado*, no lo *ejecutado* (el sistema no registra la ejecución real del tratamiento).
+- **Snapshot al aceptar (C-11 D-03)**: `Presupuesto.plan_id`, `ItemPresupuesto.arancel_id` y `ItemPresupuesto.cubierto` se congelan al aceptar (arancel vigente ese día). Un cambio posterior de plan o de arancel no altera lo ya aceptado ni lo liquidado. El `ajuste` de cobertura (`Cobertura obra social`) reduce el pendiente del paciente; si lo salda, el presupuesto pasa a `cobrado` sin recibo.
+- `movimiento_caja` referencia exactamente uno de `recibo_id` o `liquidacion_id` (C-11 D-14).
 - Exportación: CSV + PDF presentable.
 
 ### Notificacion
@@ -92,4 +96,5 @@ Turno 1──* Notificacion · Paciente 1──* EsperaEntry
 - Roles (admin —incl. alias Dueño—/odontólogo/secretaria) + 1 admin inicial.
 - 1 sillón demo + 1 profesional demo con agenda semanal (sede única v1.0).
 - Nomenclador de prueba con OS ficticia ("OS Ficticia Demo" + planes/aranceles de ejemplo — decisión 2026-10-05).
+- Pacientes demo ficticios (C-12): 1 paciente con plan de "OS Ficticia Demo" y teléfono ficticio válido, listo para el flujo de demo. Idempotente por DNI. El seed no crea cajas, movimientos de caja ni recibos.
 - Plantillas WhatsApp: recordatorio 48/24 h, confirmación, hueco liberado, reseña Google.

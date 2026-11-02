@@ -119,7 +119,8 @@ async def reset_estado_base(cfg, dsn: str) -> None:
         async with reset_engine.begin() as conn:
             await conn.execute(
                 _text(
-                    "DROP TABLE IF EXISTS movimiento_caja, recibo_contador, recibo, caja,"
+                    "DROP TABLE IF EXISTS evento_auditoria, item_liquidacion, liquidacion, arancel, plan, obra_social,"
+                    " movimiento_caja, recibo_contador, recibo, caja,"
                     " movimiento, cuenta_corriente, item_presupuesto, presupuesto,"
                     " hallazgo_odontograma, historia_clinica, estado_hallazgo_catalogo,"
                     " tratamiento, espera_entry, notificacion, plantilla, turno, sillon,"
@@ -127,7 +128,7 @@ async def reset_estado_base(cfg, dsn: str) -> None:
                 )
             )
             for _funcion in (
-                "movimiento_inmutable", "movimiento_caja_inmutable",
+                "movimiento_inmutable", "movimiento_caja_inmutable", "evento_auditoria_inmutable",
                 "movimiento_caja_caja_abierta", "caja_proteger", "recibo_proteger",
             ):
                 await conn.execute(_text(f"DROP FUNCTION IF EXISTS {_funcion}()"))

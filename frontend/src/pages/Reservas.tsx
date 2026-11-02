@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { apiUrl } from "../shared/api-client";
+import { horaAR } from "../shared/fecha";
 
 interface Hueco {
   inicio: string;
@@ -15,7 +16,7 @@ interface ReservaExito {
 }
 
 function etiquetaHora(iso: string): string {
-  return new Date(iso).toISOString().slice(11, 16);
+  return horaAR(iso);
 }
 
 function diaSiguiente(dia: string): string {

@@ -128,3 +128,22 @@ describe("Reservas C-05", () => {
     expect(llamadas[1]).toContain("Ana Ficticia");
   });
 });
+
+describe("Reservas hora argentina (C-12 11.1)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("muestra los huecos en America/Argentina/Buenos_Aires, no en UTC", async () => {
+    mockFetch((url) => {
+      if (String(url).includes("/disponibilidad")) return Promise.resolve(respuestaJson(HUECOS, 200));
+      return Promise.resolve(respuestaJson({}, 404));
+    });
+    const usuario = userEvent.setup();
+    render(<Reservas />);
+    await buscarHuecos(usuario);
+    expect(await screen.findByRole("button", { name: "09:00 – 09:30" })).toBeDefined();
+    expect(screen.getByRole("button", { name: "09:30 – 10:00" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: /12:00/ })).toBeNull();
+  });
+});

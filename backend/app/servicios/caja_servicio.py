@@ -25,7 +25,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.config import get_settings
 from app.esquemas.caja import (
-    CajaOut, CierreIn, CobroIn, CobroOut, DesgloseMedioOut, EstadoCajaOut, ReciboOut,
+    CajaOut, CierreIn, CobroIn, CobroOut, DesgloseMedioOut, EstadoCajaOut,
+    IngresoLiquidacionOut, ReciboOut,
 )
 from app.modelos import Caja, Recibo
 from app.repos.caja_repo import CajaRepository
@@ -34,7 +35,7 @@ from app.servicios.clinica_servicio import (  # noqa: F401  (reexportados al rou
     AccesoDenegadoError, Actor, ClinicaError, ConflictoError, NoEncontradoError,
     ValidacionClinicaError, construir_actor,
 )
-from app.servicios.presupuesto_servicio import PresupuestoRepos
+from app.servicios.presupuesto_servicio import PresupuestoRepos, saldar_si_corresponde
 
 _MSG_PENDIENTE = "hay una caja anterior sin cerrar"
 _MSG_CERRADA = "la caja de hoy ya está cerrada"
@@ -102,6 +103,17 @@ async def _asegurar_y_bloquear(repos: CajaRepos, hoy: date, usuario_id: int) -> 
     if caja.estado != "abierta":
         raise ConflictoError(_MSG_CERRADA)
     return caja
+
+
+async def caja_para_movimiento(repos: CajaRepos, hoy: date, usuario_id: int) -> Caja:
+    """Control de caja y bloqueo para cualquier movimiento que mueva dinero (C-11, D-12).
+
+    Pública para que las liquidaciones no copien ni importen nombres privados: 409 si hay
+    una caja anterior sin cerrar o la de hoy está cerrada; abre la de hoy si falta y la
+    devuelve bloqueada (`FOR UPDATE`).
+    """
+    await _caja_operable(repos, hoy)
+    return await _asegurar_y_bloquear(repos, hoy, usuario_id)
 
 
 # --- salidas -----------------------------------------------------------------------------
@@ -197,10 +209,7 @@ async def cobrar(
                 caja_id=caja.id, recibo_id=recibo.id, medio=datos.medio, monto=datos.monto,
                 creado_por=actor.usuario_id,
             )
-            if pendiente - datos.monto == 0:
-                await repos.presupuestos.actualizar(
-                    presupuesto, estado="cobrado", updated_at=_ahora()
-                )
+            await saldar_si_corresponde(repos.base, presupuesto)
     except IntegrityError:
         raise ConflictoError(_MSG_COLISION) from None
     return await _a_cobro_out(repos, recibo), True
@@ -311,8 +320,17 @@ async def obtener_caja(
     else:
         bloqueo = None
     desglose: list[DesgloseMedioOut] = []
+    ingresos: list[IngresoLiquidacionOut] = []
     caja_out = None
     if caja is not None:
+        ingresos = [
+            IngresoLiquidacionOut(
+                liquidacion_id=lid, obra_social=nombre, periodo=periodo, medio=medio,
+                monto=monto, created_at=creado,
+            )
+            for lid, nombre, periodo, medio, monto, creado
+            in await repos.cajas.movimientos_de_liquidacion(caja.id)
+        ]
         caja_out = await _a_caja_out(repos, caja)
         desglose = [
             DesgloseMedioOut(medio=medio, subtotal=subtotal)
@@ -320,7 +338,7 @@ async def obtener_caja(
         ]
     return EstadoCajaOut(
         fecha=fecha_res, hoy=hoy, operable=bloqueo is None, bloqueo=bloqueo,
-        caja=caja_out, desglose=desglose,
+        caja=caja_out, desglose=desglose, ingresos_liquidacion=ingresos,
     )
 
 

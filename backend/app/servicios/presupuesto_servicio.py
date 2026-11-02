@@ -16,15 +16,19 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Sequence
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.exc import IntegrityError
 
+from app.core.config import get_settings
 from app.esquemas.presupuesto import ItemIn, ItemOut, PresupuestoOut
 from app.modelos import HistoriaClinica, Presupuesto
 from app.repos.cuenta_repo import CuentaRepository
+from app.repos.obra_social_repo import ArancelRepository, PlanRepository
 from app.repos.presupuesto_repo import ItemDetalle, PresupuestoRepository
 from app.repos.tratamiento_repo import TratamientoRepository
 from app.servicios import clinica_servicio as cs
+from app.servicios.cobertura_servicio import calcular_cobertura
 from app.servicios.clinica_servicio import (  # noqa: F401  (reexportados al router y a los tests)
     AccesoDenegadoError, Actor, ClinicaError, ConflictoError, NoEncontradoError,
     ValidacionClinicaError, construir_actor,
@@ -33,6 +37,7 @@ from app.servicios.clinica_servicio import (  # noqa: F401  (reexportados al rou
 _MSG_HALLAZGO = "hallazgo inválido para el paciente"
 _MSG_HALLAZGO_CAMBIO = "un hallazgo del presupuesto fue corregido o dado de baja"
 _CENTAVOS = Decimal("0.01")
+CONCEPTO_COBERTURA = "Cobertura obra social"
 
 
 @dataclass
@@ -41,6 +46,8 @@ class PresupuestoRepos:
     presupuestos: PresupuestoRepository
     cuentas: CuentaRepository
     tratamientos: TratamientoRepository
+    planes: PlanRepository
+    aranceles: ArancelRepository
 
     @classmethod
     def de_sesion(cls, sesion) -> "PresupuestoRepos":
@@ -49,6 +56,8 @@ class PresupuestoRepos:
             presupuestos=PresupuestoRepository(sesion),
             cuentas=CuentaRepository(sesion),
             tratamientos=TratamientoRepository(sesion),
+            planes=PlanRepository(sesion),
+            aranceles=ArancelRepository(sesion),
         )
 
 
@@ -210,19 +219,67 @@ async def rechazar(
     )
 
 
+async def saldar_si_corresponde(repos: PresupuestoRepos, presupuesto: Presupuesto) -> bool:
+    """Pasa a `cobrado` si el pendiente derivado quedó exactamente en cero (C-10, C-11, D-05).
+
+    Lo usan el cobro por caja y la cobertura total al aceptar: el pendiente se vuelve a
+    sumar de los movimientos ya insertados, sin confiar en un valor calculado antes.
+    """
+    if await repos.cuentas.pendiente_de_presupuesto(presupuesto.id) != 0:
+        return False
+    await repos.presupuestos.actualizar(presupuesto, estado="cobrado", updated_at=_ahora())
+    return True
+
+
+async def _plan_activo_del_paciente(repos: PresupuestoRepos, paciente_id: int):
+    """Plan del paciente si él y su obra social están activos; si no, None (D-03)."""
+    paciente = await repos.clinica.pacientes.get(paciente_id)
+    if paciente is None or paciente.plan_id is None:
+        return None
+    fila = await repos.planes.con_obra(paciente.plan_id)
+    if fila is None or not fila.plan.activo or not fila.obra_social.activa:
+        return None
+    return fila.plan
+
+
+async def _congelar_cobertura(
+    repos: PresupuestoRepos, presupuesto: Presupuesto, plan, ahora: datetime
+) -> Decimal:
+    """Guarda arancel y `cubierto` por ítem con el arancel del día de aceptación; devuelve el total."""
+    dia = ahora.astimezone(ZoneInfo(get_settings().tz)).date()
+    total_cubierto = Decimal("0.00")
+    for item, codigo in await repos.presupuestos.items_con_nomenclador(presupuesto.id):
+        arancel = None
+        if codigo is not None:
+            arancel = await repos.aranceles.arancel_vigente(plan.id, codigo, dia)
+        cobertura = calcular_cobertura(
+            None if arancel is None else arancel.precio, item.precio, item.cantidad
+        )
+        item.arancel_id = None if arancel is None else arancel.id
+        item.cubierto = cobertura.cubierto
+        total_cubierto += cobertura.cubierto
+    await repos.presupuestos.sesion.flush()
+    return total_cubierto
+
+
 async def aceptar(
     repos: PresupuestoRepos, actor: Actor, presupuesto_id: int, ahora: datetime | None = None,
 ) -> Presupuesto:
     """presentado -> aceptado + un único cargo por `total`, en la misma transacción (D-13).
 
+    Con plan activo (C-11, D-03, D-05) congela plan, arancel y `cubierto` y, si la cobertura
+    es mayor a cero, crea el `ajuste` negativo en el mismo savepoint; si deja el pendiente en
+    cero, el presupuesto pasa a `cobrado` sin recibo. Sin plan es idéntico a C-09.
+
     El segundo `aceptar` espera el lock, ve `aceptado` y recibe 409. Red de seguridad:
-    el índice único parcial del cargo; su `IntegrityError` también es 409 y el
-    savepoint deja el presupuesto sin tocar.
+    los índices únicos parciales del cargo y del ajuste de cobertura; su `IntegrityError`
+    también es 409 y el savepoint deja el presupuesto sin tocar.
     """
     presupuesto = await _bloquear_del_autor(repos, actor, presupuesto_id)
     _exigir_estado(presupuesto, "presentado")
     await _exigir_hallazgos_vigentes(repos, presupuesto)
     ahora = ahora or _ahora()
+    plan = await _plan_activo_del_paciente(repos, presupuesto.paciente_id)
     try:
         async with repos.presupuestos.sesion.begin_nested():
             cuenta = await repos.cuentas.asegurar(presupuesto.paciente_id)
@@ -231,11 +288,23 @@ async def aceptar(
                 concepto=f"Presupuesto {presupuesto.id}", presupuesto_id=presupuesto.id,
                 creado_por=actor.usuario_id,
             )
+            if plan is not None:
+                cubierto = await _congelar_cobertura(repos, presupuesto, plan, ahora)
+                if cubierto > 0:
+                    await repos.cuentas.crear_movimiento(
+                        cuenta.id, tipo="ajuste", monto=-cubierto,
+                        concepto=CONCEPTO_COBERTURA, presupuesto_id=presupuesto.id,
+                        creado_por=actor.usuario_id,
+                    )
     except IntegrityError:
         raise ConflictoError("el presupuesto ya tiene un cargo") from None
-    return await repos.presupuestos.actualizar(
-        presupuesto, estado="aceptado", decidido_at=ahora, updated_at=ahora
-    )
+    cambios = {"estado": "aceptado", "decidido_at": ahora, "updated_at": ahora}
+    if plan is not None:
+        cambios["plan_id"] = plan.id
+    presupuesto = await repos.presupuestos.actualizar(presupuesto, **cambios)
+    if plan is not None:
+        await saldar_si_corresponde(repos, presupuesto)
+    return presupuesto
 
 
 # --- lectura (la vista financiera del admin se arma en `a_salida`) ---------------------------

@@ -70,11 +70,11 @@ describe("Reprogramar con rollback C-04", () => {
     const alternativa = await screen.findByText(
       (_contenido: string, elemento: Element | null): boolean =>
         elemento?.tagName === "LI" &&
-        (elemento.textContent ?? "").includes("12:00"),
+        (elemento.textContent ?? "").includes("09:00"),
     );
-    expect(alternativa.textContent).toContain("12:30");
+    expect(alternativa.textContent).toContain("09:30");
     // Rollback: el turno sigue mostrando su horario original.
     const tarjeta = (await screen.findByText("Demo Paciente")).closest("article");
-    expect(tarjeta?.textContent).toContain("11:00");
+    expect(tarjeta?.textContent).toContain("08:00");
   });
 });

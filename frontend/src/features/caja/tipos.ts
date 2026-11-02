@@ -37,6 +37,18 @@ export interface DesgloseMedio {
   subtotal: string;
 }
 
+/** Ingreso (o reversion, con monto negativo) de una liquidacion de obra social (C-11, D-15).
+ * No lleva datos de pacientes: la secretaria tambien ve la caja. */
+export interface IngresoLiquidacion {
+  liquidacion_id: number;
+  obra_social: string;
+  /** `YYYY-MM-DD`, siempre el dia 1 del mes liquidado. */
+  periodo: string;
+  medio: Medio;
+  monto: string;
+  created_at: string;
+}
+
 export interface EstadoCaja {
   fecha: string;
   hoy: string;
@@ -44,6 +56,7 @@ export interface EstadoCaja {
   bloqueo: Bloqueo | null;
   caja: Caja | null;
   desglose: DesgloseMedio[];
+  ingresos_liquidacion: IngresoLiquidacion[];
 }
 
 export interface Recibo {

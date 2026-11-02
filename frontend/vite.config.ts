@@ -17,6 +17,6 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     // Solo se procesa en tests el CSS que los tests de tokens leen con ?raw (C-08, C-09).
-    css: { include: [/odontograma\.css/, /presupuestos\.css/, /cuenta-corriente\.css/, /caja\.css/, /tokens\.css/] },
+    css: { include: [/odontograma\.css/, /presupuestos\.css/, /cuenta-corriente\.css/, /caja\.css/, /liquidaciones\.css/, /tokens\.css/] },
   },
 });

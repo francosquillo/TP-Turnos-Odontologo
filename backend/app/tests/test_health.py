@@ -60,3 +60,45 @@ async def test_health_503_servicio_caido():
         assert "Traceback" not in str(body) and "JWT_SECRET" not in str(body)
     finally:
         app.dependency_overrides.clear()
+
+
+# --- C-12 11.3: check_postgres con URL de SQLAlchemy -------------------------
+def test_url_asyncpg_normaliza_el_esquema_sqlalchemy():
+    from app.main import _url_para_asyncpg
+
+    assert (
+        _url_para_asyncpg("postgresql+asyncpg://u:p@localhost:5433/turnos")
+        == "postgresql://u:p@localhost:5433/turnos"
+    )
+    # Una URL ya plana, o con otro driver, tambien queda lista para asyncpg.
+    assert _url_para_asyncpg("postgresql://u:p@h/db") == "postgresql://u:p@h/db"
+    assert _url_para_asyncpg("postgres+asyncpg://u:p@h/db") == "postgresql://u:p@h/db"
+
+
+@pytest.mark.asyncio
+async def test_check_postgres_conecta_con_url_asyncpg_de_sqlalchemy(monkeypatch):
+    """asyncpg.connect recibe un DSN sin '+asyncpg' (con el esquema SQLAlchemy daba 'down')."""
+    import asyncpg
+
+    from app import main as main_mod
+
+    recibido: dict[str, str] = {}
+
+    class _Conn:
+        async def fetchval(self, _sql: str) -> int:
+            return 1
+
+        async def close(self) -> None:
+            return None
+
+    async def conectar(dsn: str, **_kw: object) -> _Conn:
+        recibido["dsn"] = dsn
+        if "+" in dsn.split("://")[0]:
+            raise ValueError("invalid DSN: scheme is expected to be postgresql")
+        return _Conn()
+
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5433/turnos")
+    monkeypatch.setenv("JWT_SECRET", "t" * 32)
+    monkeypatch.setattr(asyncpg, "connect", conectar)
+    assert await main_mod.check_postgres() == "up"
+    assert recibido["dsn"] == "postgresql://u:p@localhost:5433/turnos"

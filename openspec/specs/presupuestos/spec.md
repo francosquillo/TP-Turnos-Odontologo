@@ -125,8 +125,9 @@ SHALL viajar como texto decimal en JSON.
 
 Los estados SHALL ser `borrador, presentado, aceptado, rechazado, cobrado`. Las
 transiciones por API de presupuestos SHALL ser `borrador → presentado`, `presentado →
-aceptado` y `presentado → rechazado`. `aceptado → cobrado` y su reversa SHALL ocurrir
-solo por caja y recibos. Una transición inválida SHALL responder `409`.
+aceptado` y `presentado → rechazado`. `aceptado → cobrado` SHALL ocurrir por caja, o al
+aceptar cuando la cobertura salda todo el importe. Su reversa SHALL ocurrir solo por recibos.
+Una transición inválida SHALL responder `409`.
 
 #### Scenario: Presentar
 
@@ -417,8 +418,9 @@ la secretaria SHALL verlos sin controles. El estado SHALL mostrarse con texto.
 
 ### Requirement: Paso a cobrado al saldar el pendiente
 
-Un presupuesto SHALL pasar a `cobrado` en la misma transacción del cobro que deja su
-pendiente exactamente en cero. Un cobro parcial SHALL NOT cambiar el estado.
+Un presupuesto SHALL pasar a `cobrado` en la misma transacción del cobro o de la cobertura que
+deja su pendiente exactamente en cero. Un cobro parcial o una cobertura parcial SHALL NOT
+cambiar el estado a `cobrado`.
 
 #### Scenario: Cobro total
 
@@ -434,6 +436,16 @@ pendiente exactamente en cero. Un cobro parcial SHALL NOT cambiar el estado.
 
 - **WHEN** falla el cobro que iba a saldarlo
 - **THEN** el presupuesto sigue `aceptado`
+
+#### Scenario: Cobertura total
+
+- **WHEN** la cobertura iguala el total al aceptar
+- **THEN** queda `cobrado`, sin recibo, con un cargo y un ajuste que dejan el pendiente en cero
+
+#### Scenario: Cobertura parcial
+
+- **WHEN** la cobertura es menor que el total
+- **THEN** queda `aceptado`, y el pendiente es lo que queda a cargo del paciente
 
 ### Requirement: Vuelta a aceptado al anular un recibo
 
@@ -460,3 +472,37 @@ anulado.
 
 - **WHEN** se anula el cargo de un presupuesto `cobrado`
 - **THEN** sigue `cobrado` con `cargo_anulado: true`
+
+### Requirement: Cobertura congelada al aceptar
+
+Al aceptar un presupuesto de un paciente con plan activo de una obra social activa, el sistema
+SHALL guardar el plan y, por ítem, el arancel vigente en el día operativo de la aceptación y
+el monto cubierto, en la misma transacción. El monto cubierto SHALL ser el menor entre el
+arancel y el precio del ítem, por la cantidad. Sin arancel, el monto cubierto SHALL ser cero.
+Un cambio posterior de arancel o de plan SHALL NOT alterar lo congelado. Sin plan, `aceptar`
+SHALL comportarse como antes.
+
+#### Scenario: Cobertura parcial
+
+- **WHEN** se acepta un ítem de precio 18000.00, cantidad 2 y arancel vigente 12600.00
+- **THEN** el ítem queda con ese arancel y `25200.00` cubierto
+
+#### Scenario: Ítem sin arancel
+
+- **WHEN** un ítem no tiene arancel vigente
+- **THEN** queda sin arancel y con `0.00` cubierto, y los demás ítems se cubren normalmente
+
+#### Scenario: Paciente sin plan
+
+- **WHEN** se acepta el presupuesto de un paciente sin plan
+- **THEN** no se guarda plan ni arancel, y existe solo el cargo
+
+#### Scenario: Plan inactivo
+
+- **WHEN** el plan o su obra social están inactivos
+- **THEN** se acepta como un paciente sin plan
+
+#### Scenario: Fallo en la cobertura
+
+- **WHEN** falla el registro de la cobertura
+- **THEN** el presupuesto sigue `presentado`, sin cargo ni cobertura

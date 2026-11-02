@@ -29,8 +29,8 @@ def test_c09_cabeza_unica_006_sobre_005():
     from alembic.script import ScriptDirectory
 
     script = ScriptDirectory(str(ALEMBIC_DIR))
-    # La cabeza avanzó con C-10 (007); 006 sigue colgando de 005 y 007 de 006.
-    assert script.get_heads() == ["007_caja_recibos"]
+    # La cabeza avanzó con C-11 (008); 006 sigue colgando de 005 y 007 de 006.
+    assert script.get_heads() == ["009_auditoria_admin"]
     assert script.get_revision("006_presupuestos_cc").down_revision == "005_clinica"
     assert script.get_revision("007_caja_recibos").down_revision == "006_presupuestos_cc"
 
@@ -42,10 +42,13 @@ def test_c09_migracion_declara_checks_e_indices_del_modelo():
     # Lo que C-10 agregó a `movimiento` (D-15) vive en 007_caja_recibos.py, no en 006.
     de_c10 = {"fk_movimiento_recibo", "ix_movimiento_recibo_id", "uq_movimiento_pago_recibo",
               "ck_movimiento_pago_con_recibo"}
+    # Lo que C-11 agregó (D-03, D-05, D-07) vive en 008_obras_sociales.py.
+    de_c11 = {"uq_movimiento_cobertura_presupuesto", "ix_presupuesto_plan_id",
+              "ix_item_presupuesto_arancel_id", "ck_item_cubierto_no_negativo"}
     for modelo in (Presupuesto, ItemPresupuesto, CuentaCorriente, Movimiento):
         nombres = {c.name for c in modelo.__table__.constraints if c.name}
         nombres |= {i.name for i in modelo.__table__.indexes}
-        nombres -= de_c10
+        nombres -= de_c10 | de_c11
         assert nombres, modelo
         for nombre in nombres:
             assert nombre in texto, f"{nombre} está en el modelo pero no en 006_presupuestos_cc.py"

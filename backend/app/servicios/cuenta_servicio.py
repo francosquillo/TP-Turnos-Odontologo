@@ -8,6 +8,8 @@ Reglas:
 - La anulación crea un `ajuste` opuesto con `anula_a_id` y motivo, bajo `FOR UPDATE` sobre
   el cargo; solo se anula un `cargo`, una sola vez (D-14). El presupuesto no cambia de
   estado: `cargo_anulado` es derivado. No existe escritura directa de movimientos.
+- C-11 (D-06): si el presupuesto tiene `ajuste` de cobertura, la misma transacción crea su
+  contramovimiento; con un ítem en cualquier liquidación responde 409.
 
 Solo hace `flush` (el router hace commit). NO loguea nada: los motivos son datos sensibles.
 Reutiliza `Actor` y los errores de dominio de `clinica_servicio`.
@@ -75,6 +77,14 @@ async def anular_cargo(
         raise ConflictoError("solo se anula un cargo; un pago se anula desde su recibo")
     if await repos.cuentas.tiene_anulacion(original.id):
         raise ConflictoError("el cargo ya fue anulado")
+    if original.presupuesto_id is not None and await repos.presupuestos.tiene_item_liquidado(
+        original.presupuesto_id
+    ):
+        raise ConflictoError("una prestación del presupuesto está en una liquidación")
+    cobertura = (
+        None if original.presupuesto_id is None
+        else await repos.cuentas.ajuste_cobertura(original.presupuesto_id)
+    )
     try:
         async with repos.cuentas.sesion.begin_nested():
             anulacion = await repos.cuentas.crear_movimiento(
@@ -83,6 +93,14 @@ async def anular_cargo(
                 presupuesto_id=original.presupuesto_id, anula_a_id=original.id,
                 creado_por=actor.usuario_id,
             )
+            if cobertura is not None:
+                # D-06: sin esto, anular dejaría un saldo a favor falso igual a la cobertura.
+                await repos.cuentas.crear_movimiento(
+                    cuenta.id, tipo="ajuste", monto=-cobertura.monto,
+                    concepto=f"Anulación del movimiento {cobertura.id}", motivo=motivo,
+                    presupuesto_id=original.presupuesto_id, anula_a_id=cobertura.id,
+                    creado_por=actor.usuario_id,
+                )
     except IntegrityError:
         raise ConflictoError("el cargo ya fue anulado") from None
     return _a_movimiento_out(anulacion, anulado=False)

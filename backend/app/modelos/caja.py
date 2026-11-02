@@ -213,7 +213,21 @@ class MovimientoCaja(Base):
         ),
         sa.ForeignKeyConstraint(["caja_id"], ["caja.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["recibo_id"], ["recibo.id"], ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["liquidacion_id"], ["liquidacion.id"], ondelete="RESTRICT"),
         sa.ForeignKeyConstraint(["creado_por"], ["usuario.id"], ondelete="RESTRICT"),
+        # C-11 (D-14): exactamente una referencia, recibo o liquidacion.
+        sa.CheckConstraint(
+            "num_nonnulls(recibo_id, liquidacion_id) = 1", name="ck_movcaja_una_referencia"
+        ),
+        sa.Index("ix_movcaja_liquidacion_id", "liquidacion_id"),
+        sa.Index(
+            "uq_movcaja_liq_ingreso", "liquidacion_id", unique=True,
+            postgresql_where=sa.text("monto > 0"),
+        ),
+        sa.Index(
+            "uq_movcaja_liq_reversion", "liquidacion_id", unique=True,
+            postgresql_where=sa.text("monto < 0"),
+        ),
         sa.Index("ix_movcaja_caja_id", "caja_id"),
         sa.Index("ix_movcaja_recibo_id", "recibo_id"),
         sa.Index("ix_movcaja_creado_por", "creado_por"),
@@ -231,7 +245,8 @@ class MovimientoCaja(Base):
         sa.BigInteger, sa.Identity(always=True), primary_key=True
     )
     caja_id: Mapped[int] = mapped_column(sa.BigInteger, nullable=False)
-    recibo_id: Mapped[int] = mapped_column(sa.BigInteger, nullable=False)
+    recibo_id: Mapped[int | None] = mapped_column(sa.BigInteger, nullable=True)
+    liquidacion_id: Mapped[int | None] = mapped_column(sa.BigInteger, nullable=True)
     medio: Mapped[str] = mapped_column(sa.Text, nullable=False)
     monto: Mapped[Decimal] = mapped_column(sa.Numeric(16, 2), nullable=False)
     motivo: Mapped[str | None] = mapped_column(sa.Text, nullable=True)

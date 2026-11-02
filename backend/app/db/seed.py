@@ -11,7 +11,9 @@ con placeholder/bcrypt heredado se re-hashea una vez (idempotente).
 import asyncio
 import os
 import sys
+from datetime import date
 from decimal import Decimal
+from typing import NamedTuple
 from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -21,7 +23,9 @@ if str(BACKEND_DIR) not in sys.path:
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.modelos import Profesional, Rol, Sillon, Tratamiento, Usuario
+from app.modelos import (
+    Arancel, ObraSocial, Paciente, Plan, Profesional, Rol, Sillon, Tratamiento, Usuario,
+)
 
 SILLON_DEMO_NOMBRE = "Sillón Demo 1"
 PROFESIONAL_DEMO_MATRICULA = "DEMO-0001"
@@ -36,6 +40,32 @@ TRATAMIENTOS_DEMO = (
     ("COR-001", "Corona de porcelana", Decimal("120000.00")),
     ("EXT-001", "Extracción simple", Decimal("15000.00")),
 )
+# C-11 (D-21): obra social ficticia con dos planes. EXT-001 queda SIN arancel a propósito, para
+# mostrar la revisión manual; OBT-001 de Plan Base tiene una versión anterior cerrada (RN-OS-03);
+# Plan Plus cubre PRO-001 al 100 % para mostrar `cobrado` sin recibo.
+OBRA_SOCIAL_DEMO = "OS Ficticia Demo"
+PLANES_DEMO = ("Plan Base", "Plan Plus")
+NOMENCLADOR_DEMO = {
+    "CON-001": "N-001", "PRO-001": "N-002", "OBT-001": "N-003",
+    "END-001": "N-004", "COR-001": "N-005", "EXT-001": "N-006",
+}
+_INICIO_DEMO = date(2026, 1, 1)
+# (plan, codigo del tratamiento, precio del arancel, vigencia_desde, vigencia_hasta)
+ARANCELES_DEMO = (
+    ("Plan Base", "CON-001", Decimal("5600.00"), _INICIO_DEMO, None),
+    ("Plan Base", "PRO-001", Decimal("8400.00"), _INICIO_DEMO, None),
+    ("Plan Base", "OBT-001", Decimal("9000.00"), _INICIO_DEMO, date(2026, 9, 30)),
+    ("Plan Base", "OBT-001", Decimal("12600.00"), date(2026, 10, 1), None),
+    ("Plan Base", "END-001", Decimal("45500.00"), _INICIO_DEMO, None),
+    ("Plan Base", "COR-001", Decimal("84000.00"), _INICIO_DEMO, None),
+    ("Plan Plus", "CON-001", Decimal("6800.00"), _INICIO_DEMO, None),
+    ("Plan Plus", "PRO-001", Decimal("12000.00"), _INICIO_DEMO, None),
+    ("Plan Plus", "OBT-001", Decimal("15300.00"), _INICIO_DEMO, None),
+    ("Plan Plus", "END-001", Decimal("55250.00"), _INICIO_DEMO, None),
+    ("Plan Plus", "COR-001", Decimal("102000.00"), _INICIO_DEMO, None),
+)
+
+
 AGENDA_DEMO = {
     "duracion_slot_min": 30,
     "horario": {
@@ -44,6 +74,26 @@ AGENDA_DEMO = {
         "viernes": [["09:00", "13:00"]],
     },
 }
+
+
+class PacienteDemo(NamedTuple):
+    nombre: str
+    apellido: str
+    dni: str
+    telefono: str  # ya normalizado (solo digitos): la reserva online busca por este valor
+    email: str
+    plan: str | None
+
+
+# C-12 (D-06): pacientes 100 % ficticios. DNI con prefijo de prueba 9000, telefonos
+# `+54 9 11 0000-00xx` en digitos y emails @example.com. Dos con plan de la OS demo para
+# recorrer la liquidacion; dos particulares. El seed NO crea turnos, cajas ni recibos.
+PACIENTES_DEMO = (
+    PacienteDemo("Lucía", "Demo Base", "90000001", "5491100000011", "lucia.demo@example.com", "Plan Base"),
+    PacienteDemo("Mateo", "Demo Plus", "90000002", "5491100000012", "mateo.demo@example.com", "Plan Plus"),
+    PacienteDemo("Sofía", "Demo Particular", "90000003", "5491100000013", "sofia.demo@example.com", None),
+    PacienteDemo("Tomás", "Demo Particular", "90000004", "5491100000014", "tomas.demo@example.com", None),
+)
 
 
 def _necesita_rehash(hash_guardado: str) -> bool:
@@ -126,6 +176,80 @@ async def seed_tratamientos(sesion: AsyncSession) -> int:
     return await sesion.scalar(select(func.count()).select_from(Tratamiento))
 
 
+async def seed_obras_sociales(sesion: AsyncSession, creado_por: int | None = None) -> int:
+    """OS demo, planes y aranceles; idempotente por clave natural y sin pisar datos (D-21).
+
+    Completa `codigo_nomenclador` solo si es NULL. Devuelve la cantidad de aranceles.
+    """
+    for codigo, nomenclador in NOMENCLADOR_DEMO.items():
+        tratamiento = await sesion.scalar(select(Tratamiento).where(Tratamiento.codigo == codigo))
+        if tratamiento is not None and tratamiento.codigo_nomenclador is None:
+            tratamiento.codigo_nomenclador = nomenclador
+    await sesion.flush()
+    obra = await sesion.scalar(select(ObraSocial).where(ObraSocial.nombre == OBRA_SOCIAL_DEMO))
+    if obra is None:
+        obra = ObraSocial(nombre=OBRA_SOCIAL_DEMO)
+        sesion.add(obra)
+        await sesion.flush()
+    planes: dict[str, Plan] = {}
+    for nombre in PLANES_DEMO:
+        plan = await sesion.scalar(
+            select(Plan).where(Plan.obra_social_id == obra.id, Plan.nombre == nombre)
+        )
+        if plan is None:
+            plan = Plan(obra_social_id=obra.id, nombre=nombre)
+            sesion.add(plan)
+            await sesion.flush()
+        planes[nombre] = plan
+    for plan_nombre, codigo, precio, desde, hasta in ARANCELES_DEMO:
+        plan = planes[plan_nombre]
+        # El código del arancel es el del tratamiento (si ya tenía otro, se respeta).
+        tratamiento = await sesion.scalar(select(Tratamiento).where(Tratamiento.codigo == codigo))
+        nomenclador = (
+            tratamiento.codigo_nomenclador
+            if tratamiento is not None and tratamiento.codigo_nomenclador is not None
+            else NOMENCLADOR_DEMO[codigo]
+        )
+        existe = await sesion.scalar(select(Arancel.id).where(
+            Arancel.plan_id == plan.id, Arancel.codigo_nomenclador == nomenclador,
+            Arancel.vigencia_desde == desde,
+        ))
+        if existe is None:
+            sesion.add(Arancel(
+                plan_id=plan.id, codigo_nomenclador=nomenclador,
+                descripcion=f"Arancel demo {codigo}", precio=precio, vigencia_desde=desde,
+                vigencia_hasta=hasta, creado_por=creado_por,
+                cerrado_por=creado_por if hasta is not None else None,
+            ))
+    await sesion.flush()
+    return await sesion.scalar(select(func.count()).select_from(Arancel))
+
+
+async def seed_pacientes_demo(sesion: AsyncSession) -> int:
+    """Pacientes demo idempotentes por DNI; un paciente existente no se modifica (C-12, D-06).
+
+    Requiere `seed_obras_sociales` antes (los planes). Devuelve el total de pacientes.
+    """
+    for demo in PACIENTES_DEMO:
+        if await sesion.scalar(select(Paciente.id).where(Paciente.dni == demo.dni)) is not None:
+            continue
+        plan_id = None
+        if demo.plan is not None:
+            plan_id = await sesion.scalar(
+                select(Plan.id)
+                .join(ObraSocial, Plan.obra_social_id == ObraSocial.id)
+                .where(ObraSocial.nombre == OBRA_SOCIAL_DEMO, Plan.nombre == demo.plan)
+            )
+            if plan_id is None:
+                raise RuntimeError("seed_pacientes_demo requiere seed_obras_sociales primero")
+        sesion.add(Paciente(
+            nombre=demo.nombre, apellido=demo.apellido, dni=demo.dni, telefono=demo.telefono,
+            email=demo.email, plan_id=plan_id,
+        ))
+    await sesion.flush()
+    return await sesion.scalar(select(func.count()).select_from(Paciente))
+
+
 async def _usuario_demo(sesion: AsyncSession, email: str, nombre: str, rol: str, password: str) -> Usuario:
     from app.core.security import hashear_password
 
@@ -182,6 +306,9 @@ async def run_seed(sesion: AsyncSession) -> dict[str, int]:
     await seed_demo(sesion)
     await seed_usuarios_demo(sesion, password)
     await seed_tratamientos(sesion)
+    admin = await sesion.scalar(select(Usuario).where(func.lower(Usuario.email) == email.lower()))
+    await seed_obras_sociales(sesion, None if admin is None else admin.id)
+    await seed_pacientes_demo(sesion)
     await sesion.commit()
     return {
         "roles": await sesion.scalar(select(func.count()).select_from(Rol)),
@@ -190,6 +317,10 @@ async def run_seed(sesion: AsyncSession) -> dict[str, int]:
         "profesionales": await sesion.scalar(
             select(func.count()).select_from(Profesional)
         ),
+        "obras_sociales": await sesion.scalar(select(func.count()).select_from(ObraSocial)),
+        "planes": await sesion.scalar(select(func.count()).select_from(Plan)),
+        "aranceles": await sesion.scalar(select(func.count()).select_from(Arancel)),
+        "pacientes": await sesion.scalar(select(func.count()).select_from(Paciente)),
     }
 
 
@@ -212,5 +343,6 @@ if __name__ == "__main__":
 
 __all__ = [
     "seed_roles", "seed_admin", "seed_demo", "seed_usuarios_demo",
-    "seed_tratamientos", "run_seed", "main",
+    "seed_tratamientos", "seed_obras_sociales", "seed_pacientes_demo", "PACIENTES_DEMO",
+    "run_seed", "main",
 ]

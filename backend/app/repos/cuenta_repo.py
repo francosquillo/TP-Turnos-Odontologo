@@ -137,3 +137,15 @@ class CuentaRepository(BaseRepository[CuentaCorriente]):
                 select(Movimiento.id).where(Movimiento.anula_a_id == movimiento_id).limit(1)
             )
         ) is not None
+
+    async def ajuste_cobertura(self, presupuesto_id: int) -> Movimiento | None:
+        """El `ajuste` de cobertura del presupuesto (C-11, D-05), o None si no hay."""
+        return await self.sesion.scalar(
+            select(Movimiento).where(
+                Movimiento.presupuesto_id == presupuesto_id,
+                Movimiento.tipo == "ajuste",
+                Movimiento.anula_a_id.is_(None),
+                Movimiento.recibo_id.is_(None),
+                Movimiento.monto < 0,
+            )
+        )

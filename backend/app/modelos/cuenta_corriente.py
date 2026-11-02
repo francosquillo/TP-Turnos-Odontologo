@@ -93,6 +93,15 @@ class Movimiento(Base):
             unique=True,
             postgresql_where=sa.text("tipo = 'cargo'"),
         ),
+        # C-11 (D-05): como mucho un ajuste de cobertura (negativo, sin anulacion ni recibo).
+        sa.Index(
+            "uq_movimiento_cobertura_presupuesto",
+            "presupuesto_id",
+            unique=True,
+            postgresql_where=sa.text(
+                "tipo = 'ajuste' AND anula_a_id IS NULL AND recibo_id IS NULL AND monto < 0"
+            ),
+        ),
         sa.Index(
             "uq_movimiento_anula_a",
             "anula_a_id",

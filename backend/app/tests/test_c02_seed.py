@@ -13,7 +13,7 @@ from db_utils import sesion_pg  # noqa: F401  (fixture PG real con skip sin Dock
 
 async def _conteos(sesion_pg):
     from sqlalchemy import func, select
-    from app.modelos import Profesional, Rol, Sillon, Usuario
+    from app.modelos import Paciente, Profesional, Rol, Sillon, Usuario
 
     async def contar(modelo):
         return await sesion_pg.scalar(select(func.count()).select_from(modelo))
@@ -22,6 +22,7 @@ async def _conteos(sesion_pg):
         "usuarios": await contar(Usuario),
         "sillones": await contar(Sillon),
         "profesionales": await contar(Profesional),
+        "pacientes": await contar(Paciente),  # C-12: pacientes demo idempotentes
     }
 
 

@@ -1,4 +1,5 @@
 /** Tipos agenda C-04 (D-08): tipado estricto, cero `any`. */
+import { claveDiaAR, horaAR } from "../../shared/fecha";
 
 export type EstadoTurno =
   | "pendiente"
@@ -35,15 +36,12 @@ export const COLOR_POR_ESTADO: Record<EstadoTurno, string> = {
   cancelado: "#b91c1c",
 };
 
-/** HH:MM determinista en UTC (los tests no dependen de la TZ local). */
+/** HH:MM en America/Argentina/Buenos_Aires (determinista, sin depender de la TZ local). */
 export function formatoHora(iso: string): string {
-  const fecha = new Date(iso);
-  const hh = String(fecha.getUTCHours()).padStart(2, "0");
-  const mm = String(fecha.getUTCMinutes()).padStart(2, "0");
-  return `${hh}:${mm}`;
+  return horaAR(iso);
 }
 
-/** YYYY-MM-DD en UTC para agrupar por día. */
+/** YYYY-MM-DD del día argentino para agrupar por día. */
 export function claveDia(iso: string): string {
-  return new Date(iso).toISOString().slice(0, 10);
+  return claveDiaAR(iso);
 }

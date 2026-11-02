@@ -46,4 +46,4 @@ Sistema web de gestión de turnos odontológicos que cierra el circuito completo
 
 ## Restricción dura: plazo de entrega
 
-Entrega del TP: **12 de Octubre 2026**. Equipo de 3 personas; ~7 días desde el 05/10/2026 (decisión 2026-10-05). El roadmap debe planificarse dentro de esa ventana.
+Entrega del TP: **8 de Noviembre 2026**. Equipo de 3 personas; plazo original 12/10/2026, extendido una semana desde el 01/11/2026. El roadmap debe planificarse dentro de esa ventana.

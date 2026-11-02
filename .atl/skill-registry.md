@@ -2,7 +2,7 @@
 
 **Delegator use only.** Any agent that launches sub-agents reads this registry to resolve compact rules, then injects them directly into sub-agent prompts. Sub-agents do NOT read this registry or individual SKILL.md files.
 
-Stack: Python + FastAPI + JWT + SQLAlchemy + PostgreSQL + Redis + Docker/Compose; React + TypeScript + Vite. Equipo 3, plazo 12/10/2026, sede única, pagos simulados, OS ficticia, deploy local. Fuente de verdad: `knowledge-base/` + `CHANGES.md` (12 changes, 6 gates).
+Stack: Python + FastAPI + JWT + SQLAlchemy + PostgreSQL + Redis + Docker/Compose; React + TypeScript + Vite. Equipo 3, plazo 08/11/2026, sede única, pagos simulados, OS ficticia, deploy local. Fuente de verdad: `knowledge-base/` + `CHANGES.md` (12 changes, 6 gates).
 
 ## User Skills
 

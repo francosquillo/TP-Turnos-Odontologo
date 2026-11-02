@@ -80,6 +80,17 @@ class DesgloseMedioOut(BaseSchema):
     subtotal: Dinero
 
 
+class IngresoLiquidacionOut(BaseSchema):
+    """Ingreso (o reversión, con monto negativo) de una liquidación; sin datos de pacientes."""
+
+    liquidacion_id: int
+    obra_social: str
+    periodo: date
+    medio: MedioPago
+    monto: Dinero
+    created_at: datetime
+
+
 class EstadoCajaOut(BaseSchema):
     fecha: date
     hoy: date
@@ -87,9 +98,10 @@ class EstadoCajaOut(BaseSchema):
     bloqueo: Bloqueo | None
     caja: CajaOut | None
     desglose: list[DesgloseMedioOut]
+    ingresos_liquidacion: list[IngresoLiquidacionOut] = Field(default_factory=list)
 
 
 __all__ = [
     "AnulacionReciboIn", "CajaOut", "CierreIn", "CobroIn", "CobroOut", "DesgloseMedioOut",
-    "EstadoCajaOut", "ReciboOut",
+    "EstadoCajaOut", "IngresoLiquidacionOut", "ReciboOut",
 ]

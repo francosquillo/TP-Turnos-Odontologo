@@ -11,7 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modelos import Caja, MovimientoCaja
+from app.modelos import Caja, Liquidacion, MovimientoCaja, ObraSocial
 from app.repos.base import BaseRepository
 
 
@@ -75,3 +75,25 @@ class CajaRepository(BaseRepository[Caja]):
         self.sesion.add(movimiento)
         await self.sesion.flush()
         return movimiento
+
+    async def ingreso_de_liquidacion(self, liquidacion_id: int) -> MovimientoCaja | None:
+        """El único ingreso (monto positivo) de la liquidación (`uq_movcaja_liq_ingreso`)."""
+        return await self.sesion.scalar(
+            select(MovimientoCaja).where(
+                MovimientoCaja.liquidacion_id == liquidacion_id, MovimientoCaja.monto > 0
+            )
+        )
+
+    async def movimientos_de_liquidacion(self, caja_id: int) -> list[tuple]:
+        """Ingresos y reversiones de liquidaciones de la caja, sin datos de pacientes (D-15)."""
+        filas = await self.sesion.execute(
+            select(
+                MovimientoCaja.liquidacion_id, ObraSocial.nombre, Liquidacion.periodo,
+                MovimientoCaja.medio, MovimientoCaja.monto, MovimientoCaja.created_at,
+            )
+            .join(Liquidacion, Liquidacion.id == MovimientoCaja.liquidacion_id)
+            .join(ObraSocial, ObraSocial.id == Liquidacion.os_id)
+            .where(MovimientoCaja.caja_id == caja_id)
+            .order_by(MovimientoCaja.created_at, MovimientoCaja.id)
+        )
+        return list(filas.all())

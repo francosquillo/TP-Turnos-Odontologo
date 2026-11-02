@@ -11,6 +11,7 @@ import type { Presupuesto } from "../presupuestos/tipos";
 import { anularMovimiento, consultarCuenta } from "./api";
 import { AnularModal } from "./AnularModal";
 import { AnularReciboModal } from "./AnularReciboModal";
+import { PanelCobertura } from "./PanelCobertura";
 import { ETIQUETA_TIPO } from "./tipos";
 import type { Cuenta, Movimiento, Pendiente } from "./tipos";
 
@@ -174,6 +175,8 @@ export function CuentaPage({ pacienteId, pacienteNombre, rol, alVolver }: Props)
     <section className="cuenta" aria-label="Cuenta corriente">
       {encabezado}
       <ResumenSaldo saldo={cuenta.saldo} />
+
+      <PanelCobertura pacienteId={pacienteId} />
 
       {cuenta.pendientes.length > 0 && (
         <>

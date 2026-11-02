@@ -1,7 +1,10 @@
 """Repo Paciente: hereda CRUD + baja logica (RN-GL-01, D-06)."""
 from datetime import datetime, timezone
 
+from collections.abc import Collection
+
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos import Paciente
@@ -21,6 +24,24 @@ class PacienteRepository(BaseRepository[Paciente]):
             .offset(offset)
         )
         return list(filas.scalars().all())
+
+    async def dnis_activos(self, dnis: Collection[str]) -> set[str]:
+        """DNI de la lista que ya pertenecen a pacientes no eliminados (C-12, importacion)."""
+        if not dnis:
+            return set()
+        filas = await self.sesion.execute(
+            select(Paciente.dni).where(Paciente.dni.in_(dnis), Paciente.deleted_at.is_(None))
+        )
+        return set(filas.scalars().all())
+
+    async def insertar_si_no_existe(self, **datos) -> int | None:
+        """`INSERT ... ON CONFLICT DO NOTHING`: devuelve el id, o `None` si choco con `uq_paciente_dni`.
+
+        No aborta la transaccion ante un DNI repetido (incluye pacientes dados de baja: el
+        indice unico cubre tambien las filas con `deleted_at`).
+        """
+        consulta = pg_insert(Paciente).values(**datos).on_conflict_do_nothing().returning(Paciente.id)
+        return await self.sesion.scalar(consulta)
 
     async def por_telefono(self, telefono: str):
         """Paciente no eliminado con ese telefono normalizado (C-05, D-05)."""

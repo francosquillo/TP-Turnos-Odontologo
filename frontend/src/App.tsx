@@ -11,7 +11,7 @@ import { OfertaEspera } from "./pages/OfertaEspera";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
 
-type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "cuenta" | "caja" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
+type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "cuenta" | "caja" | "liquidaciones" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
 
 function Barra(): JSX.Element {
   const { sesion, cerrarSesion } = useAuth();
@@ -49,6 +49,11 @@ const CuentaPage = lazy(() =>
 // C-10: la caja y los recibos tambien se cargan bajo demanda.
 const CajaPage = lazy(() =>
   import("./features/caja/CajaPage").then((m) => ({ default: m.CajaPage })),
+);
+
+// C-11: las liquidaciones a obras sociales tambien se cargan bajo demanda.
+const LiquidacionesPage = lazy(() =>
+  import("./features/liquidaciones/LiquidacionesPage").then((m) => ({ default: m.LiquidacionesPage })),
 );
 
 interface PacienteAbierto {
@@ -95,6 +100,17 @@ function CajaRuta(): JSX.Element {
   );
 }
 
+/** El admin opera las liquidaciones; el odontologo las ve en modo lectura (solo sus filas). */
+function LiquidacionesRuta(): JSX.Element {
+  const { sesion } = useAuth();
+  const rol = sesion?.rol === "odontologo" ? "odontologo" : "admin";
+  return (
+    <Suspense fallback={<p>Cargando liquidaciones…</p>}>
+      <LiquidacionesPage rol={rol} />
+    </Suspense>
+  );
+}
+
 function OdontogramaRuta({ paciente, alVolver }: { paciente: PacienteAbierto; alVolver: () => void }): JSX.Element {
   const { sesion } = useAuth();
   const rol = sesion?.rol === "odontologo" ? "odontologo" : "secretaria";
@@ -105,8 +121,17 @@ function OdontogramaRuta({ paciente, alVolver }: { paciente: PacienteAbierto; al
   );
 }
 
+// C-12: el panel admin (usuarios, exportacion) tambien se carga bajo demanda.
+const PanelAdminPage = lazy(() =>
+  import("./features/admin/PanelAdmin").then((m) => ({ default: m.PanelAdmin })),
+);
+
 function PanelAdmin(): JSX.Element {
-  return <p>Panel de administración (demo C-03)</p>;
+  return (
+    <Suspense fallback={<p>Cargando panel…</p>}>
+      <PanelAdminPage />
+    </Suspense>
+  );
 }
 
 const RUTA_OFERTA = /^\/lista-espera\/([^/]+)\/?$/;
@@ -144,6 +169,9 @@ export function App(): JSX.Element {
         </button>
         <button type="button" onClick={(): void => setPagina("caja")}>
           Caja
+        </button>
+        <button type="button" onClick={(): void => setPagina("liquidaciones")}>
+          Liquidaciones
         </button>
         <button type="button" onClick={(): void => setPagina("espera")}>
           Lista de espera
@@ -207,6 +235,11 @@ export function App(): JSX.Element {
         {pagina === "caja" && (
           <RequireRole roles={["secretaria", "admin"]} alternativa={<Login />}>
             <CajaRuta />
+          </RequireRole>
+        )}
+        {pagina === "liquidaciones" && (
+          <RequireRole roles={["admin", "odontologo"]} alternativa={<Login />}>
+            <LiquidacionesRuta />
           </RequireRole>
         )}
         {pagina === "espera" && (

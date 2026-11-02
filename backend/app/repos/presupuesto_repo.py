@@ -7,10 +7,12 @@ un borrador se reemplazan físicamente (D-18). El orden del historial es
 """
 from dataclasses import dataclass
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, exists, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modelos import HallazgoOdontograma, ItemPresupuesto, Presupuesto, Tratamiento
+from app.modelos import (
+    HallazgoOdontograma, ItemLiquidacion, ItemPresupuesto, Presupuesto, Tratamiento,
+)
 from app.repos.base import BaseRepository
 
 
@@ -90,3 +92,28 @@ class PresupuestoRepository(BaseRepository[Presupuesto]):
             .execution_options(populate_existing=True)
         )
         return [ItemDetalle(*fila) for fila in filas.all()]
+
+
+    async def items_con_nomenclador(
+        self, presupuesto_id: int
+    ) -> list[tuple[ItemPresupuesto, str | None]]:
+        """Ítems en orden de alta con el código de nomenclador de su tratamiento (C-11, D-03)."""
+        filas = await self.sesion.execute(
+            select(ItemPresupuesto, Tratamiento.codigo_nomenclador)
+            .join(Tratamiento, Tratamiento.id == ItemPresupuesto.tratamiento_id)
+            .where(ItemPresupuesto.presupuesto_id == presupuesto_id)
+            .order_by(ItemPresupuesto.id)
+            .execution_options(populate_existing=True)
+        )
+        return [(item, codigo) for item, codigo in filas.all()]
+
+    async def tiene_item_liquidado(self, presupuesto_id: int) -> bool:
+        """True si algún ítem del presupuesto está en cualquier liquidación (C-11, D-06)."""
+        return bool(await self.sesion.scalar(
+            select(
+                exists().where(
+                    ItemLiquidacion.item_presupuesto_id == ItemPresupuesto.id,
+                    ItemPresupuesto.presupuesto_id == presupuesto_id,
+                )
+            )
+        ))

@@ -30,7 +30,7 @@ La fuente de verdad del dominio vive en `knowledge-base/`. **Leé el archivo rel
 
 | Archivo | Cuándo leerlo |
 |---------|---------------|
-| [01_vision_y_objetivos.md](knowledge-base/01_vision_y_objetivos.md) | Propósito, alcance v1.0, métricas, plazo 12/10/2026 |
+| [01_vision_y_objetivos.md](knowledge-base/01_vision_y_objetivos.md) | Propósito, alcance v1.0, métricas, plazo 08/11/2026 |
 | [02_descripcion_general.md](knowledge-base/02_descripcion_general.md) | Stack, arquitectura, integraciones, API REST |
 | [03_actores_y_roles.md](knowledge-base/03_actores_y_roles.md) | Auth, RBAC, 3 roles + público (Dueño=Admin) |
 | [04_modelo_de_datos.md](knowledge-base/04_modelo_de_datos.md) | Entidades, ERD, migraciones, seed |
@@ -75,7 +75,7 @@ El plan de implementación completo está en [CHANGES.md](CHANGES.md). Resumen:
 - Variante turnos-pura: `C-01 → C-02 → C-03 → C-04 → C-05 → C-06 → C-07`.
 - **Primer change**: `C-01 foundation-setup` (compose api+worker+postgres:16+redis:7, skeletons, env, btree_gist).
 - **Prioridad**: Turnos/Agenda (Épica A+B) primero. Recorte si atrasa: C-07 → C-11 (PDF) → C-12 (reseñas), nunca C-04/C-05.
-- **Restricciones 2026-10-05**: sede única, rol FK simple, Dueño=Admin, pagos simulados, AFIP post-TP, OS ficticia, deploy local, datos ficticios, espera 2h, plazo 12/10/2026.
+- **Restricciones 2026-10-05**: sede única, rol FK simple, Dueño=Admin, pagos simulados, AFIP post-TP, OS ficticia, deploy local, datos ficticios, espera 2h, plazo 08/11/2026.
 
 **Antes de cualquier `/opsx:propose`**: leé [CHANGES.md](CHANGES.md), identificá las dependencias del change y los archivos de "Leer antes".
 

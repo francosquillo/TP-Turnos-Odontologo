@@ -4,6 +4,7 @@ import { ApiError } from "../../shared/api-client";
 import { formatearMoneda } from "../../shared/moneda";
 import { anularRecibo, consultarCaja, listarRecibos } from "./api";
 import { CierreForm } from "./CierreForm";
+import { IngresosLiquidacion } from "./IngresosLiquidacion";
 import { RecibosLista } from "./RecibosLista";
 import { ETIQUETA_MEDIO, formatearFecha } from "./tipos";
 import type { EstadoCaja, Recibo } from "./tipos";
@@ -149,6 +150,8 @@ export function CajaPage({ rol }: Props): JSX.Element {
           ))}
         </ul>
       )}
+
+      <IngresosLiquidacion ingresos={estado.ingresos_liquidacion} />
 
       {rol === "secretaria" && caja !== null && caja.estado === "abierta" && (
         <CierreForm cajaId={caja.id} alCerrada={(): Promise<void> => cargar(fechaPedida)} />

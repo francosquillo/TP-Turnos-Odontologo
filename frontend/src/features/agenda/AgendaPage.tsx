@@ -15,8 +15,22 @@ import { TurnoCard } from "./TurnoCard";
 import type { Hueco, TurnoAgenda, VistaAgenda } from "./tipos";
 import { claveDia, formatoHora } from "./tipos";
 
+/**
+ * PATCH /turnos/... devuelve TurnoOut (sin nombres): se conservan los de la fila previa
+ * salvo que la respuesta los traiga.
+ */
+function fusionar(previo: TurnoAgenda, actualizado: TurnoAgenda): TurnoAgenda {
+  return {
+    ...previo,
+    ...actualizado,
+    paciente_nombre: actualizado.paciente_nombre ?? previo.paciente_nombre,
+    profesional_matricula: actualizado.profesional_matricula ?? previo.profesional_matricula,
+    sillon_nombre: actualizado.sillon_nombre ?? previo.sillon_nombre,
+  };
+}
+
 function hoyLocal(): string {
-  return new Date().toISOString().slice(0, 10);
+  return claveDia(new Date().toISOString());
 }
 
 interface Props {
@@ -55,14 +69,14 @@ export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): J
 
   const alConfirmar = useCallback(async (turno: TurnoAgenda): Promise<void> => {
     const actualizado = await cambiarEstadoTurno(turno.id, "confirmado", null);
-    setTurnos((prev) => prev.map((t) => (t.id === turno.id ? actualizado : t)));
+    setTurnos((prev) => prev.map((t) => (t.id === turno.id ? fusionar(t, actualizado) : t)));
   }, []);
 
   const alCancelar = useCallback(
     async (motivo: string): Promise<void> => {
       if (aCancelar === null) return;
       const actualizado = await cambiarEstadoTurno(aCancelar.id, "cancelado", motivo);
-      setTurnos((prev) => prev.map((t) => (t.id === aCancelar.id ? actualizado : t)));
+      setTurnos((prev) => prev.map((t) => (t.id === aCancelar.id ? fusionar(t, actualizado) : t)));
       setACancelar(null);
     },
     [aCancelar],
@@ -71,7 +85,7 @@ export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): J
   const alMarcar = useCallback(
     async (turno: TurnoAgenda, estado: "asistido" | "ausente"): Promise<void> => {
       const actualizado = await cambiarEstadoTurno(turno.id, estado, null);
-      setTurnos((prev) => prev.map((t) => (t.id === turno.id ? actualizado : t)));
+      setTurnos((prev) => prev.map((t) => (t.id === turno.id ? fusionar(t, actualizado) : t)));
     },
     [],
   );
@@ -114,7 +128,7 @@ export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): J
       );
       try {
         const actualizado = await reprogramarTurno(id, inicio, fin);
-        setTurnos((curr) => curr.map((t) => (t.id === id ? actualizado : t)));
+        setTurnos((curr) => curr.map((t) => (t.id === id ? fusionar(t, actualizado) : t)));
         setAlternativas([]);
         setAviso(null);
       } catch (error) {
