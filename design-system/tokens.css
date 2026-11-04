@@ -127,3 +127,64 @@
   outline: var(--focus-ring);
   outline-offset: var(--focus-offset);
 }
+
+/* ---- Modo Oscuro (C-14) ---- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ---- Marca ajustada para contraste sobre fondos oscuros ---- */
+  --color-primary: #14b8a6;
+  --color-primary-hover: #2dd4bf;
+  --color-primary-soft: #134e4a;
+  --color-on-primary: #042f2e;
+
+  /* ---- Neutros oscuros ---- */
+  --color-bg: #090d16;
+  --color-surface: #111827;
+  --color-surface-alt: #1f2937;
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-border: #374151;
+  --color-border-strong: #64748b;
+  --color-disabled-bg: #1e293b;
+  --color-disabled-text: #64748b;
+
+  /* ---- Semánticos ---- */
+  --color-danger: #ef4444;
+  --color-danger-hover: #f87171;
+  --color-danger-soft: #450a0a;
+  --color-danger-text: #fca5a5;
+  --color-success-soft: #052e16;
+  --color-success-text: #86efac;
+  --color-success-border: #166534;
+  --color-warning-soft: #451a03;
+  --color-warning-text: #fde68a;
+  --color-info-soft: #172554;
+  --color-info-text: #93c5fd;
+
+  /* ---- Estados de turno ---- */
+  --estado-pendiente: #f59e0b;
+  --estado-confirmado: #3b82f6;
+  --estado-asistido: #22c55e;
+  --estado-ausente: #9ca3af;
+  --estado-cancelado: #ef4444;
+  --estado-pendiente-bg: #451a03;   --estado-pendiente-text: #fde68a;
+  --estado-confirmado-bg: #172554;  --estado-confirmado-text: #93c5fd;
+  --estado-asistido-bg: #052e16;    --estado-asistido-text: #86efac;
+  --estado-ausente-bg: #1f2937;     --estado-ausente-text: #d1d5db;
+  --estado-cancelado-bg: #450a0a;   --estado-cancelado-text: #fca5a5;
+
+  /* ---- Estados de lista de espera ---- */
+  --espera-activa-bg: #083344;     --espera-activa-text: #67e8f9;
+  --espera-ofrecida-bg: #2e1065;   --espera-ofrecida-text: #c4b5fd;
+  --espera-convertida-bg: #052e16; --espera-convertida-text: #86efac;
+  --espera-vencida-bg: #1e293b;    --espera-vencida-text: #94a3b8;
+
+  /* ---- Sombras oscuras ---- */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.7);
+
+  /* ---- Foco ---- */
+  --focus-color: #60a5fa;
+}

@@ -109,14 +109,23 @@ export function Reservas(props: { alConfirmar?: (token: string) => void }): JSX.
 
   if (exito !== null) {
     return (
-      <section>
-        <h1>¡Reserva creada!</h1>
-        <p>Revisá tu WhatsApp: te enviamos el link de confirmación.</p>
-        <p>
-          Link de demo: <a href={`/confirmar/${exito.token}`}>{`/confirmar/${exito.token}`}</a>
+      <section className="card wrap-sm" style={{ textAlign: "center", padding: "var(--space-6)" }}>
+        <div style={{ fontSize: "2.5rem", marginBottom: "var(--space-2)" }}>✅</div>
+        <h1 style={{ color: "var(--color-primary)", marginBottom: "var(--space-2)" }}>¡Reserva creada!</h1>
+        <p style={{ fontSize: "var(--text-lg)", marginBottom: "var(--space-3)" }}>
+          Revisá tu WhatsApp: te enviamos el link de confirmación.
         </p>
+        <div className="banner banner-success" style={{ justifyContent: "center", marginBottom: "var(--space-4)" }}>
+          <p style={{ margin: 0, wordBreak: "break-all" }}>
+            Link de demo: <a href={`/confirmar/${exito.token}`}>{`/confirmar/${exito.token}`}</a>
+          </p>
+        </div>
         {props.alConfirmar !== undefined && (
-          <button type="button" onClick={(): void => props.alConfirmar?.(exito.token)}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={(): void => props.alConfirmar?.(exito.token)}
+          >
             Confirmar ahora
           </button>
         )}
@@ -125,97 +134,165 @@ export function Reservas(props: { alConfirmar?: (token: string) => void }): JSX.
   }
 
   return (
-    <section>
-      <h1>Reservá tu turno</h1>
-      <form onSubmit={(e): Promise<void> => buscar(e)}>
-        <label htmlFor="reserva-profesional">Profesional (ID)</label>
-        <input
-          id="reserva-profesional"
-          inputMode="numeric"
-          value={profesionalId}
-          onChange={(e): void => setProfesionalId(e.target.value)}
-          required
-        />
-        <label htmlFor="reserva-sillon">Sillón (ID)</label>
-        <input
-          id="reserva-sillon"
-          inputMode="numeric"
-          value={sillonId}
-          onChange={(e): void => setSillonId(e.target.value)}
-          required
-        />
-        <label htmlFor="reserva-dia">Día</label>
-        <input
-          id="reserva-dia"
-          type="date"
-          value={dia}
-          onChange={(e): void => setDia(e.target.value)}
-          required
-        />
-        <button type="submit" disabled={buscando || profesionalId === "" || dia === ""}>
-          Buscar huecos
-        </button>
-      </form>
+    <section className="wrap-sm" style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+      <div>
+        <h1 style={{ marginBottom: "var(--space-1)" }}>Reservá tu turno</h1>
+        <p className="muted" style={{ margin: 0 }}>Completá los pasos para agendar tu consulta odontológica.</p>
+      </div>
 
-      {huecos !== null && huecos.length === 0 && <p>No hay huecos ese día.</p>}
+      <div className="card">
+        <h3 style={{ marginBottom: "var(--space-3)", color: "var(--color-primary)" }}>1. Elegí profesional y fecha</h3>
+        <form onSubmit={(e): Promise<void> => buscar(e)}>
+          <div className="field">
+            <label htmlFor="reserva-profesional">Profesional (ID)</label>
+            <input
+              id="reserva-profesional"
+              className="input"
+              inputMode="numeric"
+              placeholder="Ej. 1"
+              value={profesionalId}
+              onChange={(e): void => setProfesionalId(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="reserva-sillon">Sillón (ID)</label>
+            <input
+              id="reserva-sillon"
+              className="input"
+              inputMode="numeric"
+              value={sillonId}
+              onChange={(e): void => setSillonId(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="reserva-dia">Día</label>
+            <input
+              id="reserva-dia"
+              className="input"
+              type="date"
+              value={dia}
+              onChange={(e): void => setDia(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%" }}
+            disabled={buscando || profesionalId === "" || dia === ""}
+          >
+            {buscando ? "Buscando..." : "Buscar huecos"}
+          </button>
+        </form>
+      </div>
+
+      {huecos !== null && huecos.length === 0 && (
+        <div className="banner banner-warning">
+          <p style={{ margin: 0 }}>No hay huecos ese día.</p>
+        </div>
+      )}
+
       {huecos !== null && huecos.length > 0 && (
-        <div>
-          <h2>Elegí el horario</h2>
-          {huecos.map((h) => (
-            <button
-              key={h.inicio}
-              type="button"
-              aria-pressed={huecoElegido?.inicio === h.inicio}
-              onClick={(): void => {
-                setHuecoElegido(h);
-                setAlternativas(null);
-              }}
-            >
-              {`${etiquetaHora(h.inicio)} – ${etiquetaHora(h.fin)}`}
-            </button>
-          ))}
+        <div className="card">
+          <h2 style={{ fontSize: "var(--text-lg)", marginBottom: "var(--space-3)", color: "var(--color-primary)" }}>
+            2. Elegí el horario
+          </h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+            {huecos.map((h) => {
+              const seleccionado = huecoElegido?.inicio === h.inicio;
+              return (
+                <button
+                  key={h.inicio}
+                  type="button"
+                  className={`btn ${seleccionado ? "btn-primary" : "btn-secondary"} btn-sm`}
+                  aria-pressed={seleccionado}
+                  onClick={(): void => {
+                    setHuecoElegido(h);
+                    setAlternativas(null);
+                  }}
+                >
+                  {`${etiquetaHora(h.inicio)} – ${etiquetaHora(h.fin)}`}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {alternativas !== null && alternativas.length > 0 && (
-        <div>
-          <p>Ese hueco se acaba de ocupar. Te ofrecemos estas alternativas:</p>
-          {alternativas.map((h) => (
-            <button
-              key={h.inicio}
-              type="button"
-              aria-pressed={huecoElegido?.inicio === h.inicio}
-              onClick={(): void => setHuecoElegido(h)}
-            >
-              {`${etiquetaHora(h.inicio)} – ${etiquetaHora(h.fin)}`}
-            </button>
-          ))}
+        <div className="card" style={{ borderColor: "var(--color-warning-text)" }}>
+          <p className="error-msg" style={{ marginTop: 0 }}>
+            Ese hueco se acaba de ocupar. Te ofrecemos estas alternativas:
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)" }}>
+            {alternativas.map((h) => {
+              const seleccionado = huecoElegido?.inicio === h.inicio;
+              return (
+                <button
+                  key={h.inicio}
+                  type="button"
+                  className={`btn ${seleccionado ? "btn-primary" : "btn-secondary"} btn-sm`}
+                  aria-pressed={seleccionado}
+                  onClick={(): void => setHuecoElegido(h)}
+                >
+                  {`${etiquetaHora(h.inicio)} – ${etiquetaHora(h.fin)}`}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <form onSubmit={(e): Promise<void> => reservar(e)}>
-        <label htmlFor="reserva-nombre">Nombre</label>
-        <input
-          id="reserva-nombre"
-          value={nombre}
-          onChange={(e): void => setNombre(e.target.value)}
-          required
-          minLength={2}
-        />
-        <label htmlFor="reserva-telefono">Teléfono</label>
-        <input
-          id="reserva-telefono"
-          inputMode="tel"
-          value={telefono}
-          onChange={(e): void => setTelefono(e.target.value)}
-          required
-        />
-        <button type="submit" disabled={!formularioCompleto || enviando}>
-          Confirmar reserva
-        </button>
-      </form>
+      <div className="card">
+        <h3 style={{ marginBottom: "var(--space-3)", color: "var(--color-primary)" }}>3. Tus datos de contacto</h3>
+        <form onSubmit={(e): Promise<void> => reservar(e)}>
+          <div className="field">
+            <label htmlFor="reserva-nombre">Nombre</label>
+            <input
+              id="reserva-nombre"
+              className="input"
+              placeholder="Nombre y apellido"
+              value={nombre}
+              onChange={(e): void => setNombre(e.target.value)}
+              required
+              minLength={2}
+            />
+          </div>
 
-      {error !== null && <p role="alert">{error}</p>}
+          <div className="field">
+            <label htmlFor="reserva-telefono">Teléfono</label>
+            <input
+              id="reserva-telefono"
+              className="input"
+              inputMode="tel"
+              placeholder="Ej. 11 5555-5555"
+              value={telefono}
+              onChange={(e): void => setTelefono(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%", marginTop: "var(--space-2)" }}
+            disabled={!formularioCompleto || enviando}
+          >
+            {enviando ? "Confirmando..." : "Confirmar reserva"}
+          </button>
+        </form>
+      </div>
+
+      {error !== null && (
+        <div className="banner banner-error">
+          <p role="alert" style={{ margin: 0 }}>{error}</p>
+        </div>
+      )}
     </section>
   );
 }

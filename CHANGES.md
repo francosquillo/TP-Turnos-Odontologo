@@ -39,6 +39,8 @@ C-01 foundation-setup
         ├── C-08 clinica-odontograma-hc
         │   └── C-09 presupuestos-cuenta-corriente
         └── C-12 admin-cierre-demo (base: C-02 + C-03)
+            └── C-13 ui-cohesive-design-polish (unificación visual de todas las páginas)
+                └── C-14 dark-mode-toggle (modo claro/oscuro alternable)
 ```
 
 ### Paralelismo por fase
@@ -340,6 +342,34 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `knowledge-base/08_arquitectura_propuesta.md` §Despliegue, §Variables de entorno
   - `knowledge-base/02_descripcion_general.md` §Integraciones
 
+### [C-13] `ui-cohesive-design-polish`
+- **Estado**: `[x]` archivado (2026-11-03) → `openspec/changes/archive/2026-11-03-c-13-ui-cohesive-design-polish/` — verificado full verify Docker: 430/430 Vitest verde, tsc OK, build OK, 1468/1486 Pytest backend (18 pre-existentes), openspec validate estricto OK.
+- **Scope**:
+  - Layout y Shell unificado: componente `AppHeader` con logo provisional e insignia de rol de sesión, navegación con pestañas estilizadas y contenedor responsivo `.wrap`.
+  - Páginas públicas de Paciente: `Inicio` (landing atractiva, tipografía médica y accesos rápidos), `Reservas` (pasos claros, píldoras de horario con estados y formulario accesible), `Confirmar` y `OfertaEspera` (tarjetas centrales de voucher con countdown y feedback táctil), `Seguridad` (grid de compromisos de privacidad con jerarquía visual).
+  - Vistas de Personal (Staff): `Login` (tarjeta centrada y accesible), `AgendaPage` (cards de turnos enriquecidas con borde de estado, badges semánticos, filtros compactos y modal de cancelación refinado), `OdontogramaPage` (grilla FDI 11-48 y formulario alineado), `CuentaPage` y `CajaPage` (tarjetas de balance destacado, tablas de movimientos limpias y modales claros), `LiquidacionesPage` y `ListaEsperaPage` (tablas uniformes y badges de estado), `PanelAdmin` (sub-tabs visuales para usuarios, importación y exportación).
+  - Exclusiones: Cero cambios de backend/endpoints/BD, cero dependencias pesadas nuevas (usar CSS modular con `tokens.css`), cero rotura de tests de Vitest (conservar `data-testid` y roles ARIA).
+- **Dependencias**: `C-01..C-12`
+- **Governance**: MEDIO
+- **Leer antes**:
+  - `design-system/README.md`
+  - `design-system/tokens.css`
+  - `design-system/components.html`
+  - `knowledge-base/08_arquitectura_propuesta.md` §Frontend
+
+### [C-14] `dark-mode-toggle`
+- **Estado**: `[x]` archivado (2026-11-03)
+- **Scope**:
+  - Tokens CSS oscuros en `design-system/tokens.css` bajo el selector `[data-theme="dark"]`.
+  - Utilidad/hook `useTheme.ts` con detección de preferencia del sistema y persistencia en `localStorage`.
+  - Botón interactivo de alternancia (toggle ☀️/🌙) en `AppHeader.tsx`.
+  - Cero roturas de tests (433/433 Vitest y build limpio).
+- **Dependencias**: `C-13`
+- **Governance**: BAJO
+- **Leer antes**:
+  - `design-system/tokens.css`
+  - `design-system/README.md`
+
 ---
 
 ## Resumen
@@ -358,6 +388,9 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
 | C-10 | 3 | Caja + cierre obligatorio + recibos (simulado) | C-09 | CRITICO |
 | C-11 | 3 | OS ficticia + aranceles + liquidación CSV/PDF | C-04,C-09 | MEDIO |
 | C-12 | 4 | Usuarios/import/export/seguridad/demo E2E | C-02,C-03 | ALTO |
+| C-13 | 4 | Layout shell + UI polish cohesivo en 12 vistas | C-12 | MEDIO |
 
-**Total: 12 changes en 4 fases · 6 GATES · camino crítico 7 changes.**
+| C-14 | 4 | Modo claro/oscuro alternable + persistencia + toggle | C-13 | BAJO |
+
+**Total: 14 changes en 4 fases · 6 GATES · camino crítico 7 changes.**
 Excluido v1.0 (post-TP, no generar changes): IA 24/7, portal paciente, MP/AFIP real, perio/imágenes/firma, multi-sede, analytics, API pública, app nativa.

@@ -1,0 +1,282 @@
+/* Componentes Reutilizables — Turnos Odontólogo */
+
+/* Botones con ergonomía táctil */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-weight: var(--weight-medium);
+  font-size: var(--text-md);
+  line-height: 1;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out),
+              transform var(--motion-fast) var(--ease-out);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border-color: var(--color-border-strong);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-alt);
+}
+
+.btn-sm {
+  min-height: 2rem;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.btn:disabled {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  border-color: transparent;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* Campos de Formulario */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+}
+
+.field label {
+  font-weight: var(--weight-medium);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.input {
+  min-height: var(--target-min);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--text-md);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color var(--motion-fast) var(--ease-out);
+}
+
+select.input {
+  cursor: pointer;
+}
+
+textarea.input {
+  padding: var(--space-3);
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.input:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-color: var(--color-primary);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+  border-width: 2px;
+}
+
+.input:disabled {
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.error-msg {
+  font-size: var(--text-sm);
+  color: var(--color-danger-text);
+  font-weight: var(--weight-medium);
+}
+
+/* Tarjetas */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+
+/* Badges de Estado */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  background: var(--bg, var(--color-surface-alt));
+  color: var(--fg, var(--color-text));
+  line-height: 1.4;
+}
+
+.badge::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dot, var(--color-border-strong));
+  flex: none;
+}
+
+.badge[data-estado="pendiente"] { --bg: var(--estado-pendiente-bg); --fg: var(--estado-pendiente-text); --dot: var(--estado-pendiente); }
+.badge[data-estado="confirmado"] { --bg: var(--estado-confirmado-bg); --fg: var(--estado-confirmado-text); --dot: var(--estado-confirmado); }
+.badge[data-estado="asistido"] { --bg: var(--estado-asistido-bg); --fg: var(--estado-asistido-text); --dot: var(--estado-asistido); }
+.badge[data-estado="ausente"] { --bg: var(--estado-ausente-bg); --fg: var(--estado-ausente-text); --dot: var(--estado-ausente); }
+.badge[data-estado="cancelado"] { --bg: var(--estado-cancelado-bg); --fg: var(--estado-cancelado-text); --dot: var(--estado-cancelado); }
+
+/* Tablas */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-4);
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--text-sm);
+}
+
+table.data-table th {
+  background: var(--color-surface-alt);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--weight-bold);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+table.data-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+table.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+table.data-table tr:hover td {
+  background: var(--color-surface-alt);
+}
+
+/* Modales */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 100;
+  backdrop-filter: blur(2px);
+}
+
+.dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 520px;
+  width: 100%;
+  padding: var(--space-5);
+  box-sizing: border-box;
+}
+
+/* Banners de Alerta */
+.banner {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+}
+
+.banner-error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+  border-color: #fca5a5;
+}
+
+.banner-success {
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+  border-color: var(--color-success-border);
+}
+
+.banner-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-color: #fcd34d;
+}

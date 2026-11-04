@@ -71,7 +71,7 @@ export function OfertaEspera(props: { token: string }): JSX.Element {
   const llamar = <>Llamá al consultorio al {TELEFONO}.</>;
 
   return (
-    <section className="oferta card">
+    <section className="oferta card wrap-sm" style={{ padding: "var(--space-6)", marginTop: "var(--space-6)" }}>
       {vista.tipo === "cargando" && <p>Cargando…</p>}
       {vista.tipo === "oferta" && (
         <>

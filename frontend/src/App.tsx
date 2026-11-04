@@ -1,6 +1,8 @@
 import { lazy, Suspense, useState } from "react";
 import { AuthProveedor, useAuth } from "./shared/auth-context";
 import { RequireRole } from "./shared/RequireRole";
+import { AppHeader } from "./shared/layout/AppHeader";
+import type { Pagina } from "./shared/layout/AppHeader";
 import { AgendaPage } from "./features/agenda/AgendaPage";
 import type { TurnoAgenda } from "./features/agenda/tipos";
 import { ListaEsperaPage } from "./features/lista-espera/ListaEsperaPage";
@@ -10,31 +12,6 @@ import { Login } from "./pages/Login";
 import { OfertaEspera } from "./pages/OfertaEspera";
 import { Reservas } from "./pages/Reservas";
 import { Seguridad } from "./pages/Seguridad";
-
-type Pagina = "inicio" | "reservas" | "agenda" | "odontograma" | "cuenta" | "caja" | "liquidaciones" | "espera" | "oferta-espera" | "confirmar" | "seguridad" | "ingresar" | "admin";
-
-function Barra(): JSX.Element {
-  const { sesion, cerrarSesion } = useAuth();
-  return (
-    <div>
-      {sesion === null ? (
-        <span>Sin sesión</span>
-      ) : (
-        <span>
-          {sesion.email} ({sesion.rol}){" "}
-          <button
-            type="button"
-            onClick={(): void => {
-              void cerrarSesion();
-            }}
-          >
-            Cerrar sesión
-          </button>
-        </span>
-      )}
-    </div>
-  );
-}
 
 // C-08: el odontograma se carga bajo demanda (no pesa en la landing publica).
 const OdontogramaPage = lazy(() =>
@@ -156,40 +133,8 @@ export function App(): JSX.Element {
 
   return (
     <AuthProveedor>
-      <Barra />
-      <nav>
-        <button type="button" onClick={(): void => setPagina("inicio")}>
-          Inicio
-        </button>
-        <button type="button" onClick={(): void => setPagina("reservas")}>
-          Reservar
-        </button>
-        <button type="button" onClick={(): void => setPagina("agenda")}>
-          Agenda
-        </button>
-        <button type="button" onClick={(): void => setPagina("caja")}>
-          Caja
-        </button>
-        <button type="button" onClick={(): void => setPagina("liquidaciones")}>
-          Liquidaciones
-        </button>
-        <button type="button" onClick={(): void => setPagina("espera")}>
-          Lista de espera
-        </button>
-        <button type="button" onClick={(): void => setPagina("confirmar")}>
-          Confirmar
-        </button>
-        <button type="button" onClick={(): void => setPagina("seguridad")}>
-          Seguridad
-        </button>
-        <button type="button" onClick={(): void => setPagina("ingresar")}>
-          Ingresar
-        </button>
-        <button type="button" onClick={(): void => setPagina("admin")}>
-          Admin
-        </button>
-      </nav>
-      <main>
+      <AppHeader pagina={pagina} alCambiarPagina={(p): void => setPagina(p)} />
+      <main className="wrap">
         {pagina === "inicio" && <Inicio alNavegar={irAPagina} />}
         {pagina === "reservas" && (
           <Reservas

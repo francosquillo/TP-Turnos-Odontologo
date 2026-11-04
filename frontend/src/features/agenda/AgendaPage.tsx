@@ -153,54 +153,91 @@ export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): J
   }
 
   return (
-    <section aria-label="Agenda">
-      <h2>Agenda</h2>
-      <nav>
-        <button type="button" onClick={(): void => setVista("dia")}>
+    <section aria-label="Agenda" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "var(--space-2)" }}>
+        <h2 style={{ margin: 0 }}>Agenda</h2>
+        <span className="muted" style={{ fontVariantNumeric: "tabular-nums" }}>
+          {turnos.length} turno(s) en vista
+        </span>
+      </div>
+
+      <nav className="card row" style={{ padding: "var(--space-3)", gap: "var(--space-2)" }}>
+        <button
+          type="button"
+          className={`btn ${vista === "dia" ? "btn-primary" : "btn-secondary"} btn-sm`}
+          onClick={(): void => setVista("dia")}
+        >
           Día
         </button>
-        <button type="button" onClick={(): void => setVista("semana")}>
+        <button
+          type="button"
+          className={`btn ${vista === "semana" ? "btn-primary" : "btn-secondary"} btn-sm`}
+          onClick={(): void => setVista("semana")}
+        >
           Semana
         </button>
-        <button type="button" onClick={(): void => setVista("mes")}>
+        <button
+          type="button"
+          className={`btn ${vista === "mes" ? "btn-primary" : "btn-secondary"} btn-sm`}
+          onClick={(): void => setVista("mes")}
+        >
           Mes
         </button>
-        <label htmlFor="fecha-agenda">Fecha</label>
-        <input
-          id="fecha-agenda"
-          type="date"
-          value={fecha}
-          onChange={(e): void => setFecha(e.target.value)}
-        />
+        <div className="row" style={{ marginLeft: "auto", gap: "var(--space-2)" }}>
+          <label htmlFor="fecha-agenda" style={{ fontSize: "var(--text-sm)", fontWeight: "var(--weight-medium)" }}>
+            Fecha
+          </label>
+          <input
+            id="fecha-agenda"
+            className="input"
+            style={{ width: "auto", minHeight: "2rem", padding: "0 var(--space-2)" }}
+            type="date"
+            value={fecha}
+            onChange={(e): void => setFecha(e.target.value)}
+          />
+        </div>
       </nav>
-      {aviso !== null && <p role="alert">{aviso}</p>}
-      {alternativas.length > 0 && (
-        <ul aria-label="Alternativas">
-          {alternativas.map((h) => (
-            <li key={h.inicio}>
-              {formatoHora(h.inicio)}–{formatoHora(h.fin)}
-            </li>
-          ))}
-        </ul>
+
+      {aviso !== null && (
+        <div className="banner banner-warning">
+          <p role="alert" style={{ margin: 0 }}>{aviso}</p>
+        </div>
       )}
+
+      {alternativas.length > 0 && (
+        <div className="card">
+          <h4 style={{ margin: "0 0 var(--space-2)" }}>Alternativas disponibles:</h4>
+          <ul aria-label="Alternativas" style={{ margin: 0, paddingLeft: "var(--space-4)" }}>
+            {alternativas.map((h) => (
+              <li key={h.inicio}>
+                {formatoHora(h.inicio)}–{formatoHora(h.fin)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {vista === "mes" ? (
-        <ul>
+        <ul className="grid" style={{ listStyle: "none", padding: 0 }}>
           {[...porDia.entries()].map(([dia, lista]) => (
             <li key={dia}>
               <button
                 type="button"
+                className="card btn btn-secondary"
+                style={{ width: "100%", justifyContent: "space-between", height: "auto", padding: "var(--space-4)" }}
                 onClick={(): void => {
                   setFecha(dia);
                   setVista("dia");
                 }}
               >
-                {dia}: {lista.length} turnos
+                <span>{dia}</span>
+                <span className="badge">{lista.length} turnos</span>
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <div>
+        <div className="grid">
           {turnos.map((turno) => (
             <TurnoCard
               key={turno.id}
@@ -219,6 +256,7 @@ export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): J
           ))}
         </div>
       )}
+
       <ReprogramarZona
         nuevoHorario={nuevoHorario}
         alCambiarHorario={setNuevoHorario}
@@ -226,11 +264,13 @@ export function AgendaPage({ alAbrirOdontograma, alAbrirCuenta }: Props = {}): J
           void alSoltar(e);
         }}
       />
+
       <CrearForm
         alCrear={(datos): void => {
           void alCrear(datos);
         }}
       />
+
       {aCancelar !== null && (
         <CancelarModal
           turno={aCancelar}

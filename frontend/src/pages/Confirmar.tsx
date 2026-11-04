@@ -35,7 +35,7 @@ function confirmarUnaVez(token: string): Promise<Resultado> {
       try {
         return { estado, contacto: contactoDe((await respuesta.json()) as unknown) };
       } catch {
-        return { estado: "invalido", contacto: null };
+        return { estado, contacto: null };
       }
     })
     .catch((): Resultado => ({ estado: "invalido", contacto: null }));
@@ -64,22 +64,37 @@ export function Confirmar(props: { token: string }): JSX.Element {
     };
   }, [props.token]);
 
-
   return (
-    <section>
-      <h1>Confirmá tu asistencia</h1>
-      {estado === "cargando" && <p>Confirmando…</p>}
-      {estado === "confirmado" && <p>¡Turno confirmado! Te esperamos.</p>}
-      {estado === "expirado" && (
-        <div>
-          <p>El link venció. Llamá al consultorio para reprogramar:</p>
-          <p>{contacto}</p>
+    <section className="card wrap-sm" style={{ textAlign: "center", padding: "var(--space-6)", marginTop: "var(--space-6)" }}>
+      <h1 style={{ color: "var(--color-primary)", marginBottom: "var(--space-4)" }}>
+        Confirmá tu asistencia
+      </h1>
+
+      {estado === "cargando" && (
+        <div style={{ padding: "var(--space-4)", color: "var(--color-text-muted)" }}>
+          <p style={{ fontSize: "var(--text-lg)" }}>Confirmando…</p>
         </div>
       )}
+
+      {estado === "confirmado" && (
+        <div className="banner banner-success" style={{ justifyContent: "center", fontSize: "var(--text-md)" }}>
+          <p style={{ margin: 0, fontWeight: "var(--weight-medium)" }}>
+            ¡Turno confirmado! Te esperamos.
+          </p>
+        </div>
+      )}
+
+      {estado === "expirado" && (
+        <div className="banner banner-warning" style={{ flexDirection: "column", alignItems: "center" }}>
+          <p style={{ margin: "0 0 var(--space-2)" }}>El link venció. Llamá al consultorio para reprogramar:</p>
+          <strong style={{ fontSize: "var(--text-lg)", color: "var(--color-text)" }}>{contacto}</strong>
+        </div>
+      )}
+
       {estado === "invalido" && (
-        <div>
-          <p>Link inválido. Si tenés dudas, llamá al consultorio:</p>
-          <p>{contacto}</p>
+        <div className="banner banner-error" style={{ flexDirection: "column", alignItems: "center" }}>
+          <p style={{ margin: "0 0 var(--space-2)" }}>Link inválido. Si tenés dudas, llamá al consultorio:</p>
+          <strong style={{ fontSize: "var(--text-lg)", color: "var(--color-text)" }}>{contacto}</strong>
         </div>
       )}
     </section>

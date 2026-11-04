@@ -25,38 +25,52 @@ export function TurnoCard({
 }: Props): JSX.Element {
   return (
     <article
+      className="card"
       draggable
       data-estado={turno.estado}
-      style={{ borderLeft: `6px solid ${COLOR_POR_ESTADO[turno.estado]}` }}
+      style={{
+        borderLeft: `6px solid ${COLOR_POR_ESTADO[turno.estado]}`,
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--space-2)",
+        transition: "transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out)",
+      }}
       onDragStart={(e: DragEvent): void => alIniciarArrastre(turno.id, e)}
     >
-      <header>
-        <strong>{turno.paciente_nombre ?? `Paciente ${turno.paciente_id}`}</strong>
-        <span>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "var(--space-2)" }}>
+        <strong style={{ fontSize: "var(--text-md)" }}>
+          {turno.paciente_nombre ?? `Paciente ${turno.paciente_id}`}
+        </strong>
+        <span className="muted" style={{ fontVariantNumeric: "tabular-nums", fontWeight: "var(--weight-medium)" }}>
           {formatoHora(turno.inicio)}–{formatoHora(turno.fin)}
         </span>
       </header>
-      <p>
-        {turno.estado} · {turno.sillon_nombre ?? `Sillón ${turno.sillon_id}`}
-      </p>
-      <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flexWrap: "wrap" }}>
+        <span className="badge" data-estado={turno.estado}>
+          {turno.estado}
+        </span>
+        <p style={{ margin: 0, fontSize: "var(--text-sm)", color: "var(--color-text-muted)" }}>
+          {turno.estado} · {turno.sillon_nombre ?? `Sillón ${turno.sillon_id}`}
+        </p>
+      </div>
+      <div className="row" style={{ marginTop: "var(--space-2)", gap: "var(--space-2)" }}>
         {turno.estado === "pendiente" && (
-          <button type="button" onClick={(): void => alConfirmar(turno)}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={(): void => alConfirmar(turno)}>
             Confirmar
           </button>
         )}
         {(turno.estado === "pendiente" || turno.estado === "confirmado") && (
-          <button type="button" onClick={(): void => alCancelar(turno)}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={(): void => alCancelar(turno)}>
             Cancelar
           </button>
         )}
         {alAbrirOdontograma !== undefined && (
-          <button type="button" onClick={(): void => alAbrirOdontograma(turno)}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={(): void => alAbrirOdontograma(turno)}>
             Odontograma
           </button>
         )}
         {alAbrirCuenta !== undefined && (
-          <button type="button" onClick={(): void => alAbrirCuenta(turno)}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={(): void => alAbrirCuenta(turno)}>
             Cuenta corriente
           </button>
         )}
@@ -64,11 +78,16 @@ export function TurnoCard({
           <>
             <button
               type="button"
+              className="btn btn-primary btn-sm"
               onClick={(): void => alMarcar(turno, "asistido")}
             >
               Asistido
             </button>
-            <button type="button" onClick={(): void => alMarcar(turno, "ausente")}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={(): void => alMarcar(turno, "ausente")}
+            >
               Ausente
             </button>
           </>
