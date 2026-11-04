@@ -133,9 +133,10 @@ export function App(): JSX.Element {
 
   return (
     <AuthProveedor>
-      <AppHeader pagina={pagina} alCambiarPagina={(p): void => setPagina(p)} />
-      <main className="wrap">
-        {pagina === "inicio" && <Inicio alNavegar={irAPagina} />}
+      <div className="app-shell">
+        <AppHeader pagina={pagina} alCambiarPagina={(p): void => setPagina(p)} />
+        <main className="app-main wrap">
+          {pagina === "inicio" && <Inicio alNavegar={irAPagina} />}
         {pagina === "reservas" && (
           <Reservas
             alConfirmar={(token: string): void => {
@@ -201,7 +202,8 @@ export function App(): JSX.Element {
             <PanelAdmin />
           </RequireRole>
         )}
-      </main>
+        </main>
+      </div>
     </AuthProveedor>
   );
 }

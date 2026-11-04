@@ -1,6 +1,6 @@
-/* Componentes Reutilizables — Turnos Odontólogo */
+/* Componentes Reutilizables — Turnos Odontólogo (Emil Kowalski Design Polish) */
 
-/* Botones con ergonomía táctil */
+/* Botones con ergonomía táctil y microinteracción de presión */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -16,12 +16,16 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
   transition: background-color var(--motion-fast) var(--ease-out),
               color var(--motion-fast) var(--ease-out),
               border-color var(--motion-fast) var(--ease-out),
-              transform var(--motion-fast) var(--ease-out);
+              transform var(--motion-fast) var(--ease-out),
+              box-shadow var(--motion-fast) var(--ease-out);
 }
 
+/* Feedback táctil instantáneo: escala suave al presionar */
 .btn:active:not(:disabled) {
   transform: scale(0.97);
 }
@@ -29,10 +33,14 @@
 .btn-primary {
   background: var(--color-primary);
   color: var(--color-on-primary);
+  box-shadow: 0 1px 2px rgb(15 118, 110 / 0.2);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    box-shadow: 0 2px 4px rgb(15 118, 110 / 0.3);
+  }
 }
 
 .btn-secondary {
@@ -41,9 +49,11 @@
   border-color: var(--color-border-strong);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background: var(--color-primary-soft);
-  border-color: var(--color-primary);
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+  }
 }
 
 .btn-danger {
@@ -51,8 +61,10 @@
   color: #ffffff;
 }
 
-.btn-danger:hover:not(:disabled) {
-  background: var(--color-danger-hover);
+@media (hover: hover) and (pointer: fine) {
+  .btn-danger:hover:not(:disabled) {
+    background: var(--color-danger-hover);
+  }
 }
 
 .btn-ghost {
@@ -60,8 +72,10 @@
   color: var(--color-text);
 }
 
-.btn-ghost:hover:not(:disabled) {
-  background: var(--color-surface-alt);
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-surface-alt);
+  }
 }
 
 .btn-sm {
@@ -76,6 +90,7 @@
   border-color: transparent;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .btn:focus-visible {
@@ -108,7 +123,8 @@
   border-radius: var(--radius-md);
   width: 100%;
   box-sizing: border-box;
-  transition: border-color var(--motion-fast) var(--ease-out);
+  transition: border-color var(--motion-fast) var(--ease-out),
+              box-shadow var(--motion-fast) var(--ease-out);
 }
 
 select.input {
@@ -122,9 +138,9 @@ textarea.input {
 }
 
 .input:focus-visible {
-  outline: var(--focus-ring);
-  outline-offset: var(--focus-offset);
+  outline: none;
   border-color: var(--color-primary);
+  box-shadow: var(--focus-glow);
 }
 
 .input[aria-invalid="true"] {
@@ -149,7 +165,7 @@ textarea.input {
   font-weight: var(--weight-medium);
 }
 
-/* Tarjetas */
+/* Tarjetas con microinteracción de elevación sutil */
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -157,6 +173,25 @@ textarea.input {
   box-shadow: var(--shadow-sm);
   padding: var(--space-4);
   box-sizing: border-box;
+  transition: transform var(--motion-fast) var(--ease-out),
+              box-shadow var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.card[draggable] {
+  cursor: grab;
+}
+
+.card[draggable]:active {
+  cursor: grabbing;
+  opacity: 0.92;
+  transform: scale(0.99);
 }
 
 /* Badges de Estado */
@@ -171,6 +206,8 @@ textarea.input {
   background: var(--bg, var(--color-surface-alt));
   color: var(--fg, var(--color-text));
   line-height: 1.4;
+  transition: background-color var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out);
 }
 
 .badge::before {
@@ -188,7 +225,7 @@ textarea.input {
 .badge[data-estado="ausente"] { --bg: var(--estado-ausente-bg); --fg: var(--estado-ausente-text); --dot: var(--estado-ausente); }
 .badge[data-estado="cancelado"] { --bg: var(--estado-cancelado-bg); --fg: var(--estado-cancelado-text); --dot: var(--estado-cancelado); }
 
-/* Tablas */
+/* Tablas con fila interactiva fluida */
 .table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -218,17 +255,35 @@ table.data-table td {
   padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
+  transition: background-color var(--motion-instant) var(--ease-out);
 }
 
 table.data-table tr:last-child td {
   border-bottom: none;
 }
 
-table.data-table tr:hover td {
-  background: var(--color-surface-alt);
+@media (hover: hover) and (pointer: fine) {
+  table.data-table tr:hover td {
+    background: var(--color-surface-alt);
+  }
 }
 
-/* Modales */
+/* Botón Toggle de Modo Claro/Oscuro con microinteracción */
+.theme-toggle-btn {
+  font-size: 1.15rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  user-select: none;
+  transition: transform var(--motion-fast) var(--ease-out),
+              background-color var(--motion-fast) var(--ease-out);
+}
+
+.theme-toggle-btn:active {
+  transform: rotate(20deg) scale(0.92);
+}
+
+/* Modales — Entradas naturales: fade-in y pop-in desde scale(0.95), nunca scale(0) */
 .dialog-backdrop {
   position: fixed;
   inset: 0;
@@ -238,7 +293,9 @@ table.data-table tr:hover td {
   justify-content: center;
   padding: var(--space-4);
   z-index: 100;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: backdropFadeIn var(--motion-fast) var(--ease-out) forwards;
 }
 
 .dialog {
@@ -250,6 +307,58 @@ table.data-table tr:hover td {
   width: 100%;
   padding: var(--space-5);
   box-sizing: border-box;
+  transform-origin: center;
+  animation: dialogPopIn var(--motion-base) var(--ease-out) forwards;
+}
+
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Banners de Alerta */
+.banner {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid;
+  align-items: flex-start;
+  margin-bottom: var(--space-4);
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+
+.banner-error {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+  border-color: #fca5a5;
+}
+
+.banner-success {
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+  border-color: var(--color-success-border);
+}
+
+.banner-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-color: #fcd34d;
 }
 
 /* Banners de Alerta */

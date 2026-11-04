@@ -17,12 +17,25 @@ body {
   max-width: var(--container-max);
   margin: 0 auto;
   padding: var(--space-4) var(--gutter) var(--space-7);
+  animation: viewFadeIn var(--motion-fast) var(--ease-out) forwards;
 }
 
 .wrap-sm {
   max-width: 600px;
   margin: 0 auto;
   padding: var(--space-4) var(--gutter) var(--space-7);
+  animation: viewFadeIn var(--motion-fast) var(--ease-out) forwards;
+}
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0.88;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 h1, h2, h3 {
@@ -57,34 +70,104 @@ p {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 }
 
-/* Header Institucional */
-.topbar {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 20;
+/* App Shell con Barra Lateral Colapsable */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--color-bg);
+  position: relative;
 }
 
-.topbar .topbar-content {
+.app-main {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Barra Lateral (Sidebar) */
+.app-sidebar {
+  width: 250px;
+  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: width var(--motion-base) var(--ease-drawer),
+              transform var(--motion-base) var(--ease-drawer);
+  flex-shrink: 0;
+}
+
+.app-sidebar.collapsed {
+  width: 72px;
+}
+
+/* Cabecera de la Barra Lateral */
+.sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--gutter);
-  max-width: var(--container-max);
-  margin: 0 auto;
-  flex-wrap: wrap;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  gap: var(--space-2);
+  min-height: 60px;
+}
+
+.app-sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: var(--space-3) var(--space-1);
+}
+
+.sidebar-collapse-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  user-select: none;
+  transition: background-color var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out),
+              transform var(--motion-fast) var(--ease-out);
+}
+
+.sidebar-collapse-btn:active {
+  transform: scale(0.92);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-collapse-btn:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+  }
+}
+
+.desktop-only {
+  display: inline-flex;
+}
+
+.mobile-only {
+  display: none;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   font-weight: var(--weight-bold);
   text-decoration: none;
   color: var(--color-text);
   cursor: pointer;
+  overflow: hidden;
+  user-select: none;
 }
 
 .brand-icon {
@@ -97,51 +180,40 @@ p {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .brand-name {
   font-size: var(--text-md);
   font-weight: var(--weight-bold);
   color: var(--color-text);
+  white-space: nowrap;
+  transition: opacity var(--motion-fast) var(--ease-out);
 }
 
-.user-status {
+.app-sidebar.collapsed .brand-name {
+  display: none;
+}
+
+/* Navegación dentro de Barra Lateral */
+.app-sidebar nav.main-nav {
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3) var(--space-2);
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-bottom: none;
+  background: transparent;
+}
+
+.app-sidebar .nav-tab {
+  width: 100%;
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--space-3);
-  font-size: var(--text-sm);
-  color: var(--color-text-muted);
-}
-
-.user-role-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  background: var(--color-surface-alt);
-  color: var(--color-primary);
-  border: 1px solid var(--color-border);
-  text-transform: capitalize;
-}
-
-/* Barra de Navegación */
-nav.main-nav {
-  display: flex;
-  gap: var(--space-1);
-  flex-wrap: wrap;
-  padding: var(--space-2) var(--gutter);
-  max-width: var(--container-max);
-  margin: 0 auto;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-.nav-tab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   padding: var(--space-2) var(--space-3);
   font: inherit;
   font-size: var(--text-sm);
@@ -151,13 +223,32 @@ nav.main-nav {
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
-  min-height: 2.25rem;
+  user-select: none;
+  -webkit-user-select: none;
+  text-align: left;
+  white-space: nowrap;
+  min-height: 2.5rem;
+  transition: background-color var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out),
+              transform var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out);
 }
 
-.nav-tab:hover {
-  background: var(--color-surface-alt);
-  color: var(--color-text);
+.app-sidebar.collapsed .nav-tab {
+  justify-content: center;
+  padding: var(--space-2) 0;
+  gap: 0;
+}
+
+.nav-tab:active {
+  transform: scale(0.98);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .nav-tab:hover {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+  }
 }
 
 .nav-tab[aria-current="page"] {
@@ -170,4 +261,119 @@ nav.main-nav {
 .nav-tab:focus-visible {
   outline: var(--focus-ring);
   outline-offset: var(--focus-offset);
+}
+
+.nav-tab-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-tab-label {
+  white-space: nowrap;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.app-sidebar.collapsed .nav-tab-label {
+  display: none;
+}
+
+/* Pie de Barra Lateral */
+.sidebar-footer {
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-surface-alt);
+  overflow: hidden;
+}
+
+.app-sidebar.collapsed .sidebar-footer {
+  padding: var(--space-3) var(--space-1);
+  align-items: center;
+}
+
+.user-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.user-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  text-transform: capitalize;
+}
+
+.app-sidebar.collapsed .user-details {
+  display: none;
+}
+
+/* Barra superior Móvil y Drawer */
+.mobile-topbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--gutter);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: inline-flex;
+  }
+
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 260px;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-100%);
+    z-index: 100;
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 90;
+    animation: backdropFadeIn var(--motion-fast) var(--ease-out) forwards;
+  }
 }
