@@ -1,0 +1,121 @@
+# C-15: compose de produccion para Easypanel (servicio Compose unico, fuente Git, build path "/").
+# Sin `name:` (lo define Easypanel), sin `ports` ni `container_name` (conviven otras apps en el VPS).
+# Dominios en la UI del panel: DOMAIN -> frontend:8080, api.DOMAIN -> api:8000 (HTTPS por Traefik).
+# Variables: editor de entorno de Easypanel con "Create .env file" (plantilla: .env.prod.example).
+
+x-backend-build: &backend-build
+  context: ./backend
+  dockerfile: Dockerfile
+
+x-database-url: &database-url
+  DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-turnos}:${POSTGRES_PASSWORD:?definir POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-turnos}"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: "${VITE_API_URL:?definir VITE_API_URL (https://api.DOMAIN)}"
+    expose:
+      - "8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: *backend-build
+    expose:
+      - "8000"
+    environment:
+      <<: *database-url
+      REDIS_URL: "redis://redis:6379/0"
+      JWT_SECRET: "${JWT_SECRET:?definir JWT_SECRET}"
+      JWT_EXPIRE_MIN: "${JWT_EXPIRE_MIN:-30}"
+      CORS_ORIGINS: "${CORS_ORIGINS:?definir CORS_ORIGINS como JSON}"
+      WHATSAPP_MOCK: "${WHATSAPP_MOCK:-true}"
+      TZ: "${TZ:-America/Argentina/Buenos_Aires}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-2} --proxy-headers --forwarded-allow-ips=*
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    build: *backend-build
+    environment:
+      <<: *database-url
+      REDIS_URL: "redis://redis:6379/0"
+      JWT_SECRET: "${JWT_SECRET:?definir JWT_SECRET}"
+      WHATSAPP_MOCK: "${WHATSAPP_MOCK:-true}"
+      TZ: "${TZ:-America/Argentina/Buenos_Aires}"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python -m app.worker.main
+    restart: unless-stopped
+
+  migrate:
+    build: *backend-build
+    environment:
+      <<: *database-url
+      REDIS_URL: "redis://redis:6379/0"
+      JWT_SECRET: "${JWT_SECRET:?definir JWT_SECRET}"
+      SEED_ADMIN_EMAIL: "${SEED_ADMIN_EMAIL:-admin@example.com}"
+      SEED_ADMIN_PASSWORD: "${SEED_ADMIN_PASSWORD:?definir SEED_ADMIN_PASSWORD}"
+      TZ: "${TZ:-America/Argentina/Buenos_Aires}"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: sh -c "alembic upgrade head && python -m app.db.seed"
+    restart: "no"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-turnos}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?definir POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB:-turnos}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:

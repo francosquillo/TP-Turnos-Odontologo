@@ -20,6 +20,8 @@
 
 Stack impuesto por la facultad — no negociable para el TP.
 
+Producción opcional (C-15): VPS con Easypanel/Traefik (HTTPS y dominios del panel) + frontend estático en nginx-unprivileged vía `compose.prod.yml`; dev/verify siguen con `docker-compose.yml`. Runbook: [docs/deploy-vps.md](docs/deploy-vps.md).
+
 Detalle completo: [knowledge-base/02_descripcion_general.md](knowledge-base/02_descripcion_general.md)
 
 ---
@@ -75,7 +77,7 @@ El plan de implementación completo está en [CHANGES.md](CHANGES.md). Resumen:
 - Variante turnos-pura: `C-01 → C-02 → C-03 → C-04 → C-05 → C-06 → C-07`.
 - **Primer change**: `C-01 foundation-setup` (compose api+worker+postgres:16+redis:7, skeletons, env, btree_gist).
 - **Prioridad**: Turnos/Agenda (Épica A+B) primero. Recorte si atrasa: C-07 → C-11 (PDF) → C-12 (reseñas), nunca C-04/C-05.
-- **Restricciones 2026-10-05**: sede única, rol FK simple, Dueño=Admin, pagos simulados, AFIP post-TP, OS ficticia, deploy local, datos ficticios, espera 2h, plazo 08/11/2026.
+- **Restricciones 2026-10-05**: sede única, rol FK simple, Dueño=Admin, pagos simulados, AFIP post-TP, OS ficticia, deploy local + VPS Easypanel opcional (C-15), datos ficticios, espera 2h, plazo 08/11/2026.
 
 **Antes de cualquier `/opsx:propose`**: leé [CHANGES.md](CHANGES.md), identificá las dependencias del change y los archivos de "Leer antes".
 
