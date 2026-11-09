@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    allowedHosts: true,
     proxy: {
       "/health": {
         target: process.env.VITE_API_URL ?? "http://localhost:8000",
