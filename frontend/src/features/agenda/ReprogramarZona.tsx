@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { DragEvent } from "react";
 
 interface Props {
@@ -12,21 +13,49 @@ export function ReprogramarZona({
   alCambiarHorario,
   alSoltar,
 }: Props): JSX.Element {
+  const [arrastrandoSobre, setArrastrandoSobre] = useState<boolean>(false);
+
   return (
     <section
       data-testid="zona-reprogramar"
-      onDragOver={(e: DragEvent): void => e.preventDefault()}
-      onDrop={alSoltar}
+      className="card"
+      style={{
+        borderStyle: "dashed",
+        borderWidth: "2px",
+        borderColor: arrastrandoSobre ? "var(--color-primary)" : "var(--color-border-strong)",
+        background: arrastrandoSobre ? "var(--color-primary-soft)" : "var(--color-surface-alt)",
+        transition: "background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out)",
+      }}
+      onDragOver={(e: DragEvent): void => {
+        e.preventDefault();
+        if (!arrastrandoSobre) setArrastrandoSobre(true);
+      }}
+      onDragLeave={(): void => setArrastrandoSobre(false)}
+      onDrop={(e: DragEvent): void => {
+        setArrastrandoSobre(false);
+        alSoltar(e);
+      }}
     >
-      <h3>Reprogramar por arrastre</h3>
-      <p>Arrastrá un turno hasta acá para moverlo al nuevo horario.</p>
-      <label htmlFor="nuevo-horario">Nuevo horario</label>
-      <input
-        id="nuevo-horario"
-        type="datetime-local"
-        value={nuevoHorario}
-        onChange={(e): void => alCambiarHorario(e.target.value)}
-      />
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "flex-end", gap: "var(--space-4)" }}>
+        <div style={{ flex: "1 1 260px" }}>
+          <h3 style={{ marginBottom: "var(--space-1)", color: "var(--color-primary)" }}>
+            ⇄ Reprogramar por arrastre
+          </h3>
+          <p className="muted" style={{ margin: 0 }}>
+            Elegí primero la nueva fecha/hora y arrastrá una tarjeta de turno hasta esta zona para moverlo.
+          </p>
+        </div>
+        <div className="field" style={{ margin: 0, flex: "0 1 260px", minWidth: "220px" }}>
+          <label htmlFor="nuevo-horario">Nuevo horario</label>
+          <input
+            id="nuevo-horario"
+            className="input"
+            type="datetime-local"
+            value={nuevoHorario}
+            onChange={(e): void => alCambiarHorario(e.target.value)}
+          />
+        </div>
+      </div>
     </section>
   );
 }

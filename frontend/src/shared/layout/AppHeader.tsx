@@ -184,28 +184,44 @@ export function AppHeader({ pagina, alCambiarPagina }: Props): JSX.Element {
             {sesion === null ? (
               <span className="user-details">Sin sesión</span>
             ) : (
-              <div className="user-details" style={{ display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-                <span style={{ fontSize: "var(--text-xs)", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {sesion.email}
-                </span>
-                <span className="user-role-badge" style={{ alignSelf: "flex-start" }}>
-                  {sesion.rol}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  style={{ alignSelf: "flex-start", marginTop: "var(--space-1)" }}
-                  onClick={(): void => {
-                    void cerrarSesion();
-                    setMovilAbierta(false);
-                  }}
-                >
-                  Cerrar sesión
-                </button>
-              </div>
+              <>
+                <div className="user-details">
+                  <span className="user-email" title={sesion.email}>
+                    {sesion.email}
+                  </span>
+                  <span className="user-role-badge">
+                    {sesion.rol}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    style={{ alignSelf: "flex-start", marginTop: "var(--space-1)" }}
+                    onClick={(): void => {
+                      void cerrarSesion();
+                      setMovilAbierta(false);
+                    }}
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+                {colapsada && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm sidebar-collapsed-logout"
+                    title={`Cerrar sesión (${sesion.email})`}
+                    aria-label="Cerrar sesión"
+                    onClick={(): void => {
+                      void cerrarSesion();
+                      setMovilAbierta(false);
+                    }}
+                  >
+                    🚪
+                  </button>
+                )}
+              </>
             )}
           </div>
-          <div className="sidebar-footer-controls" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "var(--space-2)" }}>
+          <div className="sidebar-footer-controls">
             <span className="nav-tab-label" style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
               Tema
             </span>
