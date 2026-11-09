@@ -70,8 +70,11 @@ AGENDA_DEMO = {
     "duracion_slot_min": 30,
     "horario": {
         "lunes": [["09:00", "13:00"], ["14:00", "18:00"]],
-        "miercoles": [["09:00", "13:00"]],
-        "viernes": [["09:00", "13:00"]],
+        "martes": [["09:00", "13:00"], ["14:00", "18:00"]],
+        "miercoles": [["09:00", "13:00"], ["14:00", "18:00"]],
+        "jueves": [["09:00", "13:00"], ["14:00", "18:00"]],
+        "viernes": [["09:00", "13:00"], ["14:00", "18:00"]],
+        "sabado": [["10:00", "13:00"]],
     },
 }
 
@@ -163,6 +166,9 @@ async def seed_demo(sesion: AsyncSession) -> tuple[Sillon, Profesional]:
             agenda_config=AGENDA_DEMO,
         )
         sesion.add(profesional)
+        await sesion.flush()
+    elif profesional.agenda_config != AGENDA_DEMO:
+        profesional.agenda_config = AGENDA_DEMO
         await sesion.flush()
     return sillon, profesional
 
