@@ -8,7 +8,7 @@
 > Prioridad 1 = Turnos/Agenda (Épica A+B primero) · Plazo duro 08/11/2026 (extendido el 01/11/2026, equipo 3)
 > Sede única v1.0 (`Sillon.sede` texto extensible) · Rol simple FK (`usuario.rol_id`, sin tabla intermedia)
 > Dueño = Admin (alias, sin rol separado) · Pagos simulados (sin MP real) · AFIP post-TP
-> OS ficticia ("OS Ficticia Demo") · Deploy local Docker Compose · Datos 100% ficticios, arquitectura prod-ready.
+> OS ficticia ("OS Ficticia Demo") · Deploy local (dev/verify) + VPS Easypanel opcional (C-15) · Datos 100% ficticios, arquitectura prod-ready.
 
 ---
 
@@ -41,6 +41,7 @@ C-01 foundation-setup
         └── C-12 admin-cierre-demo (base: C-02 + C-03)
             └── C-13 ui-cohesive-design-polish (unificación visual de todas las páginas)
                 └── C-14 dark-mode-toggle (modo claro/oscuro alternable)
+                    └── C-15 vps-deploy (deploy opcional en VPS Easypanel)
 ```
 
 ### Paralelismo por fase
@@ -370,6 +371,20 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
   - `design-system/tokens.css`
   - `design-system/README.md`
 
+### [C-15] `vps-deploy`
+- **Estado**: `[x]` archivado (2026-11-06) → `openspec/changes/archive/2026-11-06-c-15-vps-deploy/` — verify VERDE; pendiente primer deploy real en Easypanel (supuestos S-1..S-5).
+- **Scope**:
+  - `compose.prod.yml` standalone para un único servicio Compose de Easypanel: frontend (nginx-unprivileged, estático, 8080), api (uvicorn `--workers --proxy-headers`, 8000), worker, `migrate` one-off (alembic + seed), postgres:16, redis:7. Sin `ports`, sin `container_name`, sin `name:`.
+  - `frontend/Dockerfile.prod` + `frontend/deploy/nginx.conf` (SPA fallback, MIME types, cache de `/assets/`), `backend/Dockerfile` endurecido (usuario no-root, incluye alembic), `.dockerignore` de backend y frontend.
+  - Secretos solo por entorno con `${VAR:?}` fail-fast; `.env.prod.example` versionado.
+  - Runbook `docs/deploy-vps.md` (Easypanel: dominios `DOMAIN` y `api.DOMAIN`, backup/restore, actualización).
+  - Exclusiones: dev `docker-compose.yml` intacto, cero cambios en `backend/app/**` ni `frontend/src/**`; datos 100 % ficticios.
+- **Dependencias**: `C-14`
+- **Governance**: ALTO
+- **Leer antes**:
+  - `knowledge-base/08_arquitectura_propuesta.md` §Despliegue, §Variables de entorno
+  - `openspec/changes/c-15-vps-deploy/design.md`
+
 ---
 
 ## Resumen
@@ -389,8 +404,8 @@ Estimación vs plazo 12/10: 12 changes × ~5 h = ~60 h totales / 3 personas = ~2
 | C-11 | 3 | OS ficticia + aranceles + liquidación CSV/PDF | C-04,C-09 | MEDIO |
 | C-12 | 4 | Usuarios/import/export/seguridad/demo E2E | C-02,C-03 | ALTO |
 | C-13 | 4 | Layout shell + UI polish cohesivo en 12 vistas | C-12 | MEDIO |
-
 | C-14 | 4 | Modo claro/oscuro alternable + persistencia + toggle | C-13 | BAJO |
+| C-15 | 4 | Deploy opcional en VPS Easypanel (compose.prod.yml + runbook) | C-14 | ALTO |
 
-**Total: 14 changes en 4 fases · 6 GATES · camino crítico 7 changes.**
+**Total: 15 changes en 4 fases · 6 GATES · camino crítico 7 changes.**
 Excluido v1.0 (post-TP, no generar changes): IA 24/7, portal paciente, MP/AFIP real, perio/imágenes/firma, multi-sede, analytics, API pública, app nativa.

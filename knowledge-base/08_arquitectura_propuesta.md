@@ -39,7 +39,7 @@ tp-turnos-odontologo/
 
 ## Seguridad
 
-> **Decisión 2026-10-05**: despliegue v1.0 **local (Docker Compose local)**, sin cloud. Datos 100% ficticios y de prueba. Modelo, arquitectura y roadmap quedan preparados para futura producción real (TLS, secretos por entorno, consentimiento, minimización — RN-GL-03).
+> **Decisión 2026-10-05**: despliegue v1.0 **local (Docker Compose local)**; desde 2026-11-06 se admite además un VPS Easypanel opcional (C-15). Datos 100% ficticios y de prueba. Modelo, arquitectura y roadmap quedan preparados para futura producción real (TLS, secretos por entorno, consentimiento, minimización — RN-GL-03).
 
 - Autenticación: JWT Bearer corto + refresh rotativo httpOnly (RN-AU-01).
 - Autorización: RBAC en dependencia FastAPI por endpoint (matriz `03`).
@@ -51,7 +51,7 @@ tp-turnos-odontologo/
 
 ## Despliegue v1.0
 
-Local con `docker-compose.yml` (api + worker + postgres + redis). Sin cloud ni pipeline productivo en v1.0 (decisión 2026-10-05).
+Local con `docker-compose.yml` (api + worker + postgres + redis) para desarrollo y verify. Desde C-15 (decisión del usuario 2026-11-06) hay además un despliegue opcional en VPS con Easypanel como un único servicio Compose (`compose.prod.yml`, runbook en `docs/deploy-vps.md`); datos 100% ficticios. Sin pipeline CI/CD propio.
 
 ## Variables de entorno
 
