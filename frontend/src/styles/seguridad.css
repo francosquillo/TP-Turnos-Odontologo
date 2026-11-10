@@ -21,11 +21,14 @@
 
 /* Panel admin de usuarios (C-12). */
 .admin-usuarios { max-width: var(--container-max); margin: 0 auto; padding: var(--space-4) var(--gutter); font-family: var(--font-sans); color: var(--color-text); }
-.admin-usuarios table { width: 100%; border-collapse: collapse; margin-bottom: var(--space-5); }
-.admin-usuarios th, .admin-usuarios td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); }
-.admin-usuarios tr[data-activo="false"] { background: var(--color-surface-alt); color: var(--color-text-muted); }
+.admin-usuarios h2 { margin: 0 0 var(--space-4); }
+.admin-usuarios .table-wrap { margin-bottom: var(--space-5); }
+.admin-usuarios .data-table td { vertical-align: middle; }
+.admin-usuarios tr[data-activo="false"] td { color: var(--color-text-muted); }
+.admin-usuarios .input-compact { min-height: 2.25rem; width: auto; min-width: 10rem; padding-right: var(--space-2); }
 .admin-usuarios .banner-error { padding: var(--space-3); border: 1px solid var(--color-danger); border-radius: var(--radius-md); background: var(--color-danger-soft); color: var(--color-danger-text); }
-.admin-alta { display: grid; gap: var(--space-3); max-width: 28rem; padding: var(--space-4); border: 1px solid var(--color-border-strong); border-radius: var(--radius-lg); background: var(--color-surface); }
-.admin-alta label { display: grid; gap: var(--space-1); font-weight: var(--weight-medium); }
-.admin-alta input, .admin-alta select { min-height: var(--target-min); }
-.admin-usuarios button { min-height: var(--target-min); }
+.admin-alta { display: grid; gap: var(--space-1); max-width: 28rem; padding: var(--space-5); }
+.admin-alta h3 { margin: 0 0 var(--space-3); font-size: var(--text-lg); }
+.admin-alta .field { font-weight: var(--weight-medium); font-size: var(--text-sm); }
+.admin-alta .field .input { font-weight: var(--weight-regular, 400); }
+.admin-alta .btn { justify-self: start; margin-top: var(--space-2); }

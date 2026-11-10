@@ -56,7 +56,7 @@ function AltaForm({ alCreado }: AltaFormProps): JSX.Element {
 
   return (
     <form
-      className="admin-alta"
+      className="admin-alta card"
       aria-label="Nuevo usuario"
       noValidate
       onSubmit={(e): void => {
@@ -64,26 +64,28 @@ function AltaForm({ alCreado }: AltaFormProps): JSX.Element {
       }}
     >
       <h3>Nuevo usuario</h3>
-      <label>
+      <label className="field">
         Nombre
-        <input type="text" value={nombre} maxLength={120} onChange={(e): void => setNombre(e.target.value)} />
+        <input className="input" type="text" value={nombre} maxLength={120} onChange={(e): void => setNombre(e.target.value)} />
       </label>
-      <label>
+      <label className="field">
         Correo electrónico
-        <input type="email" value={email} maxLength={320} onChange={(e): void => setEmail(e.target.value)} />
+        <input className="input" type="email" value={email} maxLength={320} onChange={(e): void => setEmail(e.target.value)} />
       </label>
-      <label>
+      <label className="field">
         Contraseña inicial
         <input
+          className="input"
           type="password"
           value={password}
           autoComplete="new-password"
           onChange={(e): void => setPassword(e.target.value)}
         />
       </label>
-      <label>
+      <label className="field">
         Rol
         <select
+          className="input"
           value={rol}
           onChange={(e): void => {
             if (esRol(e.target.value)) setRol(e.target.value);
@@ -101,7 +103,7 @@ function AltaForm({ alCreado }: AltaFormProps): JSX.Element {
           {error}
         </p>
       )}
-      <button type="submit" disabled={enviando}>
+      <button type="submit" className="btn btn-primary" disabled={enviando}>
         Crear usuario
       </button>
     </form>
@@ -122,6 +124,7 @@ function Fila({ usuario, ocupado, alCambiarRol, alAlternarActivo }: FilaProps): 
       <td>{usuario.email}</td>
       <td>
         <select
+          className="input input-compact"
           aria-label={`Rol de ${usuario.nombre}`}
           value={usuario.rol}
           disabled={ocupado}
@@ -136,9 +139,16 @@ function Fila({ usuario, ocupado, alCambiarRol, alAlternarActivo }: FilaProps): 
           ))}
         </select>
       </td>
-      <td>{usuario.activo ? "Activo" : "Inactivo"}</td>
       <td>
-        <button type="button" disabled={ocupado} onClick={(): void => alAlternarActivo(usuario)}>
+        <span className="badge" data-estado={usuario.activo ? "confirmado" : "cancelado"}>
+          {usuario.activo ? "Activo" : "Inactivo"}
+        </span>
+      </td>
+      <td>
+        <button
+          type="button"
+          className={`btn btn-sm ${usuario.activo ? "btn-secondary" : "btn-primary"}`}
+          disabled={ocupado} onClick={(): void => alAlternarActivo(usuario)}>
           {usuario.activo ? "Desactivar" : "Reactivar"}
         </button>
       </td>
@@ -200,7 +210,8 @@ export function UsuariosPage(): JSX.Element {
           {aviso}
         </p>
       )}
-      <table>
+      <div className="table-wrap">
+      <table className="data-table">
         <thead>
           <tr>
             <th scope="col">Nombre</th>
@@ -226,6 +237,7 @@ export function UsuariosPage(): JSX.Element {
           ))}
         </tbody>
       </table>
+      </div>
       <AltaForm
         alCreado={(usuario): void => {
           setAviso(null);
