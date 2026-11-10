@@ -1,4 +1,4 @@
-"""C-12 4.1: seed demo con pacientes ficticios, sin caja ni recibos (D-06).
+"""C-12 4.1: seed demo con pacientes ficticios; cajas solo de dias pasados y cerradas (D-06).
 
 Primera parte: datos del seed (corre sin Postgres). Segunda parte: seed real sobre Postgres
 (sin Postgres se saltea y debe reportarse como NO EJECUTADA).
@@ -87,14 +87,20 @@ async def test_pg_seed_en_base_limpia_deja_paciente_demo_con_plan_y_telefono_val
 
 
 @pytest.mark.asyncio
-async def test_pg_seed_no_crea_cajas_movimientos_de_caja_ni_recibos(sesion_pg, env_seed):
+async def test_pg_seed_deja_solo_cajas_pasadas_cerradas_con_recibos_y_ninguna_de_hoy(sesion_pg, env_seed):
+    """Contrato nuevo (seed rico): hay cobros demo, pero ninguna caja abierta ni la de hoy."""
+    from datetime import date
+
+    from sqlalchemy import select
+
     from app.db.seed import run_seed
     from app.modelos import Caja, MovimientoCaja, Recibo
 
     await run_seed(sesion_pg)
-    assert await _contar(sesion_pg, Caja, MovimientoCaja, Recibo) == {
-        "caja": 0, "movimiento_caja": 0, "recibo": 0,
-    }
+    cajas = (await sesion_pg.execute(select(Caja))).scalars().all()
+    assert cajas and all(c.estado == "cerrada" and c.fecha < date.today() for c in cajas)
+    contados = await _contar(sesion_pg, MovimientoCaja, Recibo)
+    assert contados["recibo"] > 0 and contados["movimiento_caja"] >= contados["recibo"]
 
 
 @pytest.mark.asyncio

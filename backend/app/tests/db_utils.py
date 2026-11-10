@@ -82,9 +82,14 @@ async def sesion_pg():
 
 async def cargar_catalogo_estados(sesion) -> None:
     """Inserta el catálogo V1 (C-08, D-04): las fixtures usan create_all, no la migración."""
+    from sqlalchemy import select
+
     from app.modelos import EstadoHallazgoCatalogo
     from app.modelos.hallazgo_odontograma import CATALOGO_ESTADOS_V1, CATALOGO_VERSION_V1
 
+    # Idempotente: `run_seed` ya completa el catalogo cuando falta (seed rico).
+    if await sesion.scalar(select(EstadoHallazgoCatalogo.id).limit(1)) is not None:
+        return
     sesion.add_all(
         EstadoHallazgoCatalogo(
             codigo=codigo, version=CATALOGO_VERSION_V1, nombre=nombre,

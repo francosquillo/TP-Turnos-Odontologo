@@ -67,10 +67,14 @@ async def test_e2e_demo_de_la_reserva_al_cierre_de_caja(sesion_pg, monkeypatch):
 
     monkeypatch.setenv("SEED_ADMIN_EMAIL", "admin@demo.test")
     monkeypatch.setenv("SEED_ADMIN_PASSWORD", "demo-ficticia-123")
-    await run_seed(sesion_pg)
+    # Seed "en el pasado": su horizonte (turnos, cajas) no pisa el dia congelado del flujo.
+    from datetime import datetime as _dt
+    from zoneinfo import ZoneInfo as _ZI
+    await run_seed(sesion_pg, ahora=_dt(2026, 10, 1, 8, 0, tzinfo=_ZI("America/Argentina/Buenos_Aires")))
     await cargar_catalogo_estados(sesion_pg)
 
-    demo = next(p for p in PACIENTES_DEMO if p.plan == "Plan Base")
+    # El ultimo Plan Base: los primeros pacientes ya traen historia clinica del seed rico.
+    demo = [p for p in PACIENTES_DEMO if p.plan == "Plan Base"][-1]
     paciente_id = await sesion_pg.scalar(select(Paciente.id).where(Paciente.dni == demo.dni))
     profesional_id = await sesion_pg.scalar(
         select(Profesional.id).where(Profesional.matricula == PROFESIONAL_DEMO_MATRICULA))
@@ -83,7 +87,10 @@ async def test_e2e_demo_de_la_reserva_al_cierre_de_caja(sesion_pg, monkeypatch):
                            ("secretaria", SECRETARIA_DEMO_EMAIL))
     }
     pacientes_antes = await sesion_pg.scalar(select(func.count()).select_from(Paciente))
-    assert await sesion_pg.scalar(select(func.count()).select_from(Caja)) == 0
+    # Contrato del seed rico: ya hay cajas pasadas cerradas y recibos demo; el flujo suma uno mas.
+    assert await sesion_pg.scalar(
+        select(func.count()).select_from(Caja).where(Caja.estado == "abierta")) == 0
+    recibos_antes = await sesion_pg.scalar(select(func.count()).select_from(Recibo))
 
     precio = _precio_base("OBT-001")
     cubierto = min(_arancel_vigente("Plan Base", "OBT-001", HOY), precio)
@@ -111,7 +118,7 @@ async def test_e2e_demo_de_la_reserva_al_cierre_de_caja(sesion_pg, monkeypatch):
             # 1. Reserva publica con el telefono del paciente demo: reutiliza su ficha.
             r = await cli.post("/reservas", json={
                 "profesional_id": profesional_id, "sillon_id": sillon_id, "inicio": INICIO,
-                "fin": FIN, "nombre": "Lucía", "telefono": "+54 9 11 0000-0011"})
+                "fin": FIN, "nombre": demo.nombre, "telefono": f"+{demo.telefono}"})
             assert r.status_code == 201, r.text
             token, turno_id = r.json()["token"], r.json()["turno_id"]
 
@@ -123,7 +130,7 @@ async def test_e2e_demo_de_la_reserva_al_cierre_de_caja(sesion_pg, monkeypatch):
             r = await cli.get("/agenda?vista=dia&fecha=2026-11-02", headers=hdr("secretaria"))
             assert r.status_code == 200, r.text
             item = next(t for t in r.json() if t["id"] == turno_id)
-            assert item["paciente_id"] == paciente_id and "Lucía" in (item["paciente_nombre"] or "")
+            assert item["paciente_id"] == paciente_id and demo.nombre in (item["paciente_nombre"] or "")
 
             # 4. El odontologo del profesional demo marca asistido.
             r = await cli.patch(f"/turnos/{turno_id}/estado", json={"estado": "asistido"},
@@ -183,4 +190,4 @@ async def test_e2e_demo_de_la_reserva_al_cierre_de_caja(sesion_pg, monkeypatch):
     assert await sesion_pg.scalar(select(func.count()).select_from(Paciente)) == pacientes_antes
     turno = await sesion_pg.get(Turno, turno_id)
     assert turno.paciente_id == paciente_id and turno.estado == "asistido"
-    assert await sesion_pg.scalar(select(func.count()).select_from(Recibo)) == 1
+    assert await sesion_pg.scalar(select(func.count()).select_from(Recibo)) == recibos_antes + 1

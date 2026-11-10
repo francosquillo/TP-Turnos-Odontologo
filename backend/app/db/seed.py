@@ -4,6 +4,11 @@ Guardas por clave natural (rol.nombre, usuario.email, sillon.nombre,
 profesional.matricula) + transaccion ordenada: re-ejecutar no duplica
 ni falla en uniques. Datos 100% ficticios (prefijo Demo).
 
+Ademas carga datos demo ricos (ver `seed_demo`): ~29 pacientes, turnos relativos a hoy en todos
+los estados, historias clinicas con odontograma, presupuestos y cobros con cajas pasadas cerradas
+(sin notificaciones). Todo idempotente: re-ejecutar no duplica ni falla, tambien sobre una base ya
+poblada (los huecos ocupados y los pacientes ya sembrados se respetan).
+
 Admin inicial desde SEED_ADMIN_* con fail-fast (coherente con C-01 D-03).
 Desde C-03 el hash es Argon2 (`hashear_password`); si el admin ya existe
 con placeholder/bcrypt heredado se re-hashea una vez (idempotente).
@@ -11,7 +16,8 @@ con placeholder/bcrypt heredado se re-hashea una vez (idempotente).
 import asyncio
 import os
 import sys
-from datetime import date
+import unicodedata
+from datetime import date, datetime
 from decimal import Decimal
 from typing import NamedTuple
 from pathlib import Path
@@ -23,8 +29,11 @@ if str(BACKEND_DIR) not in sys.path:
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.db.seed_demo import seed_clinica_y_cobros, seed_turnos_demo
 from app.modelos import (
-    Arancel, ObraSocial, Paciente, Plan, Profesional, Rol, Sillon, Tratamiento, Usuario,
+    Arancel, Caja, CuentaCorriente, HallazgoOdontograma, HistoriaClinica, ItemPresupuesto,
+    Movimiento, MovimientoCaja, ObraSocial, Paciente, Plan, Presupuesto, Profesional, Recibo,
+    Rol, Sillon, Tratamiento, Turno, Usuario,
 )
 
 SILLON_DEMO_NOMBRE = "Sillón Demo 1"
@@ -90,13 +99,46 @@ class PacienteDemo(NamedTuple):
 
 # C-12 (D-06): pacientes 100 % ficticios. DNI con prefijo de prueba 9000, telefonos
 # `+54 9 11 0000-00xx` en digitos y emails @example.com. Dos con plan de la OS demo para
-# recorrer la liquidacion; dos particulares. El seed NO crea turnos, cajas ni recibos.
-PACIENTES_DEMO = (
+# recorrer la liquidacion; dos particulares. Desde el seed rico se suman ~25 mas (mezcla de planes y
+# particulares). Los turnos, la clinica y los cobros/cajas los crea `seed_demo`.
+_PACIENTES_BASE = (
     PacienteDemo("Lucía", "Demo Base", "90000001", "5491100000011", "lucia.demo@example.com", "Plan Base"),
     PacienteDemo("Mateo", "Demo Plus", "90000002", "5491100000012", "mateo.demo@example.com", "Plan Plus"),
     PacienteDemo("Sofía", "Demo Particular", "90000003", "5491100000013", "sofia.demo@example.com", None),
     PacienteDemo("Tomás", "Demo Particular", "90000004", "5491100000014", "tomas.demo@example.com", None),
 )
+# (nombre, apellido): ficticios; el plan rota Base / particular / Plus / particular / particular.
+_NOMBRES_EXTRA = (
+    ("Valentina", "Demo Gómez"), ("Santiago", "Demo Fernández"), ("Camila", "Demo Rodríguez"),
+    ("Joaquín", "Demo López"), ("Martina", "Demo Díaz"), ("Benjamín", "Demo Martínez"),
+    ("Julieta", "Demo Pérez"), ("Facundo", "Demo Romero"), ("Agustina", "Demo Sosa"),
+    ("Nicolás", "Demo Álvarez"), ("Florencia", "Demo Torres"), ("Lautaro", "Demo Ruiz"),
+    ("Carolina", "Demo Benítez"), ("Emiliano", "Demo Acosta"), ("Rocío", "Demo Medina"),
+    ("Franco", "Demo Herrera"), ("Milagros", "Demo Suárez"), ("Ignacio", "Demo Aguirre"),
+    ("Brenda", "Demo Giménez"), ("Matías", "Demo Molina"), ("Daniela", "Demo Castro"),
+    ("Lucas", "Demo Ortiz"), ("Paula", "Demo Silva"), ("Gonzalo", "Demo Rojas"),
+    ("Antonella", "Demo Núñez"),
+)
+_PLANES_EXTRA = ("Plan Base", None, "Plan Plus", None, None)
+
+
+def _ascii(texto: str) -> str:
+    sin_tildes = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return "".join(c for c in sin_tildes.lower() if c.isalnum())
+
+
+def _pacientes_extra() -> tuple[PacienteDemo, ...]:
+    """DNI 90000005.., telefono 54911000000xx (digitos) y email @example.com, todo determinista."""
+    return tuple(
+        PacienteDemo(
+            nombre, apellido, f"{90000005 + i}", f"54911000000{15 + i}",
+            f"{_ascii(nombre)}.{_ascii(apellido)}@example.com", _PLANES_EXTRA[i % len(_PLANES_EXTRA)],
+        )
+        for i, (nombre, apellido) in enumerate(_NOMBRES_EXTRA)
+    )
+
+
+PACIENTES_DEMO = _PACIENTES_BASE + _pacientes_extra()
 
 
 def _necesita_rehash(hash_guardado: str) -> bool:
@@ -296,10 +338,14 @@ async def seed_usuarios_demo(sesion: AsyncSession, password: str | None) -> tupl
     return odontologo, secretaria
 
 
-async def run_seed(sesion: AsyncSession) -> dict[str, int]:
-    """Orden roles -> admin -> demo, con commit unico. Fail-fast sin password."""
-    from app.core.config import get_settings
+async def run_seed(sesion: AsyncSession, ahora: datetime | None = None) -> dict[str, int]:
+    """Orden roles -> admin -> demo -> catalogos -> pacientes -> turnos -> clinica/cobros; commit unico.
 
+    `ahora` (inyectable en tests) fija el "hoy" de las fechas relativas. Fail-fast sin password.
+    """
+    from zoneinfo import ZoneInfo
+
+    from app.core.config import get_settings
     settings = get_settings()
     email = settings.seed_admin_email
     password = settings.seed_admin_password
@@ -307,26 +353,41 @@ async def run_seed(sesion: AsyncSession) -> dict[str, int]:
         raise RuntimeError(
             "SEED_ADMIN_PASSWORD vacio: definir en .env (fail-fast, D-04)"
         )
+    ahora = ahora or datetime.now(ZoneInfo(settings.tz))
     await seed_roles(sesion)
     await seed_admin(sesion, email=email, password_plano=password)
-    await seed_demo(sesion)
-    await seed_usuarios_demo(sesion, password)
+    sillon, profesional = await seed_demo(sesion)
+    odontologo, secretaria = await seed_usuarios_demo(sesion, password)
     await seed_tratamientos(sesion)
     admin = await sesion.scalar(select(Usuario).where(func.lower(Usuario.email) == email.lower()))
     await seed_obras_sociales(sesion, None if admin is None else admin.id)
     await seed_pacientes_demo(sesion)
+    await seed_turnos_demo(sesion, profesional, sillon, AGENDA_DEMO, ahora, secretaria.id)
+    await seed_clinica_y_cobros(sesion, odontologo, secretaria, admin, profesional, ahora)
     await sesion.commit()
+
+    async def contar(modelo) -> int:
+        return await sesion.scalar(select(func.count()).select_from(modelo))
+
     return {
-        "roles": await sesion.scalar(select(func.count()).select_from(Rol)),
-        "usuarios": await sesion.scalar(select(func.count()).select_from(Usuario)),
-        "sillones": await sesion.scalar(select(func.count()).select_from(Sillon)),
-        "profesionales": await sesion.scalar(
-            select(func.count()).select_from(Profesional)
-        ),
-        "obras_sociales": await sesion.scalar(select(func.count()).select_from(ObraSocial)),
-        "planes": await sesion.scalar(select(func.count()).select_from(Plan)),
-        "aranceles": await sesion.scalar(select(func.count()).select_from(Arancel)),
-        "pacientes": await sesion.scalar(select(func.count()).select_from(Paciente)),
+        "roles": await contar(Rol),
+        "usuarios": await contar(Usuario),
+        "sillones": await contar(Sillon),
+        "profesionales": await contar(Profesional),
+        "obras_sociales": await contar(ObraSocial),
+        "planes": await contar(Plan),
+        "aranceles": await contar(Arancel),
+        "pacientes": await contar(Paciente),
+        "turnos": await contar(Turno),
+        "historias_clinicas": await contar(HistoriaClinica),
+        "hallazgos": await contar(HallazgoOdontograma),
+        "presupuestos": await contar(Presupuesto),
+        "items_presupuesto": await contar(ItemPresupuesto),
+        "cuentas_corrientes": await contar(CuentaCorriente),
+        "movimientos_cuenta": await contar(Movimiento),
+        "recibos": await contar(Recibo),
+        "cajas": await contar(Caja),
+        "movimientos_caja": await contar(MovimientoCaja),
     }
 
 
@@ -350,5 +411,5 @@ if __name__ == "__main__":
 __all__ = [
     "seed_roles", "seed_admin", "seed_demo", "seed_usuarios_demo",
     "seed_tratamientos", "seed_obras_sociales", "seed_pacientes_demo", "PACIENTES_DEMO",
-    "run_seed", "main",
+    "seed_turnos_demo", "seed_clinica_y_cobros", "run_seed", "main",
 ]
